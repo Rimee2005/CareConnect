@@ -15,6 +15,9 @@ import { useTranslation } from '@/lib/i18n';
 import { Search, Star, MapPin, Shield, Heart, X, ArrowLeft, SlidersHorizontal, Calendar, Clock } from 'lucide-react';
 import { AIBadge } from '@/components/AIBadge';
 import { StarRating } from '@/components/StarRating';
+import { GuardianMap } from '@/components/GuardianMap';
+import { featureFlags } from '@/lib/feature-flags';
+import { calculateDistance, formatDistance } from '@/lib/utils';
 
 interface Guardian {
   _id: string;
@@ -66,6 +69,7 @@ export default function GuardiansPage() {
   const [distanceRange, setDistanceRange] = useState<[number, number]>([0, 100]);
   const [sortBy, setSortBy] = useState<string>('rating');
   const [activeTab, setActiveTab] = useState<'all' | 'saved'>(searchParams.get('tab') === 'saved' ? 'saved' : 'all');
+  const [vitalLocation, setVitalLocation] = useState<{ lat: number; lng: number } | undefined>();
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -76,6 +80,7 @@ export default function GuardiansPage() {
     if (status === 'authenticated' && session?.user?.role === 'VITAL') {
       fetchGuardians();
       fetchSavedGuardians();
+      fetchVitalLocation();
     }
   }, [session, status, router]);
 
@@ -90,6 +95,23 @@ export default function GuardiansPage() {
       console.error('Failed to fetch guardians:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchVitalLocation = async () => {
+    try {
+      const res = await fetch('/api/vital/profile');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.location?.coordinates) {
+          setVitalLocation({
+            lat: data.location.coordinates.lat,
+            lng: data.location.coordinates.lng,
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch vital location:', error);
     }
   };
 
@@ -232,22 +254,46 @@ export default function GuardiansPage() {
         guardian.experience <= experienceRange[1]
     );
 
-    // Distance/Service radius filter
-    filtered = filtered.filter(
-      (guardian) =>
-        guardian.serviceRadius >= distanceRange[0] &&
-        guardian.serviceRadius <= distanceRange[1]
-    );
+    // Calculate distance for each guardian and filter by distance
+    const guardiansWithDistance = filtered.map((guardian) => {
+      let distance: number | null = null;
+      if (vitalLocation && guardian.location?.coordinates) {
+        distance = calculateDistance(
+          vitalLocation.lat,
+          vitalLocation.lng,
+          guardian.location.coordinates.lat,
+          guardian.location.coordinates.lng
+        );
+      }
+      return { ...guardian, distance };
+    });
+
+    // Filter by distance range
+    let distanceFiltered = guardiansWithDistance;
+    if (vitalLocation) {
+      distanceFiltered = guardiansWithDistance.filter((guardian) => {
+        if (guardian.distance === null) return false;
+        return guardian.distance >= distanceRange[0] && guardian.distance <= distanceRange[1];
+      });
+    }
 
     // Sorting
-    const sorted = [...filtered].sort((a, b) => {
+    const sorted = [...distanceFiltered].sort((a, b) => {
       switch (sortBy) {
         case 'rating':
           return (b.averageRating || 0) - (a.averageRating || 0);
         case 'experience':
           return b.experience - a.experience;
         case 'distance':
-          return a.serviceRadius - b.serviceRadius;
+          if (a.distance === null && b.distance === null) return 0;
+          if (a.distance === null) return 1;
+          if (b.distance === null) return -1;
+          return a.distance - b.distance;
+        case 'ai-recommended':
+          // AI-recommended first, then by score
+          if (a.aiMatch?.isRecommended && !b.aiMatch?.isRecommended) return -1;
+          if (!a.aiMatch?.isRecommended && b.aiMatch?.isRecommended) return 1;
+          return (b.aiMatch?.score || 0) - (a.aiMatch?.score || 0);
         case 'name':
           return a.name.localeCompare(b.name);
         default:
@@ -267,6 +313,7 @@ export default function GuardiansPage() {
     experienceRange,
     distanceRange,
     sortBy,
+    vitalLocation,
   ]);
 
   if (status === 'loading' || loading) {
@@ -600,10 +647,14 @@ export default function GuardiansPage() {
                     id="sort"
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value)}
+                    aria-label="Sort guardians"
                   >
                     <option value="rating">Highest Rating</option>
-                    <option value="experience">Most Experience</option>
+                    {featureFlags.AI_MATCHING && (
+                      <option value="ai-recommended">AI-Recommended</option>
+                    )}
                     <option value="distance">Nearest First</option>
+                    <option value="experience">Most Experience</option>
                     <option value="name">Name (A-Z)</option>
                   </Select>
                 </div>
@@ -616,6 +667,17 @@ export default function GuardiansPage() {
         <div className="mb-4 text-sm text-text-muted dark:text-text-dark-muted transition-colors">
           Showing {filteredAndSortedGuardians.length} of {activeTab === 'saved' ? savedGuardians.length : guardians.length} {activeTab === 'saved' ? 'saved' : ''} guardians
         </div>
+
+        {/* Map View */}
+        {featureFlags.MAP_VIEW && filteredAndSortedGuardians.length > 0 && (
+          <GuardianMap
+            guardians={filteredAndSortedGuardians}
+            vitalLocation={vitalLocation}
+            onGuardianClick={(guardian) => {
+              router.push(`/vital/guardians/${guardian._id}`);
+            }}
+          />
+        )}
 
         {/* Guardian Cards */}
         {filteredAndSortedGuardians.length > 0 ? (
@@ -720,6 +782,11 @@ export default function GuardiansPage() {
                         <div className="mb-3 flex items-center gap-1 text-xs text-text-muted dark:text-text-dark-light sm:mb-4 sm:text-sm transition-colors">
                           <MapPin className="h-3 w-3 sm:h-4 sm:w-4" />
                           {guardian.location.city} • {guardian.serviceRadius} km radius
+                          {guardian.distance !== null && vitalLocation && (
+                            <span className="ml-1 font-semibold text-primary">
+                              • {formatDistance(guardian.distance)}
+                            </span>
+                          )}
                         </div>
                       )}
                       <div className="flex gap-2">

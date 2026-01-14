@@ -15,6 +15,13 @@ export interface IGuardianProfile extends Document {
     };
   };
   serviceRadius: number; // km
+  location: {
+    city: string;
+    coordinates?: {
+      lat: number;
+      lng: number;
+    };
+  };
   certifications: string[]; // Cloudinary URLs
   profilePhoto?: string;
   isVerified: boolean;
@@ -81,6 +88,17 @@ const GuardianProfileSchema = new Schema<IGuardianProfile>(
       required: [true, 'Service radius is required'],
       min: [1, 'Service radius must be at least 1 km'],
     },
+    location: {
+      city: {
+        type: String,
+        required: [true, 'City is required'],
+        trim: true,
+      },
+      coordinates: {
+        lat: Number,
+        lng: Number,
+      },
+    },
     certifications: {
       type: [String],
       default: [],
@@ -103,6 +121,8 @@ const GuardianProfileSchema = new Schema<IGuardianProfile>(
 GuardianProfileSchema.index({ userId: 1 });
 GuardianProfileSchema.index({ specialization: 1 });
 GuardianProfileSchema.index({ isVerified: 1 });
+GuardianProfileSchema.index({ 'location.city': 1 });
+GuardianProfileSchema.index({ 'location.coordinates': '2dsphere' });
 
 const GuardianProfile: Model<IGuardianProfile> =
   mongoose.models.GuardianProfile ||

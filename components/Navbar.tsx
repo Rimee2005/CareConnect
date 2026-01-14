@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import { Button } from './ui/button';
 import { LanguageToggle } from './LanguageToggle';
@@ -10,6 +11,7 @@ import { useTranslation } from '@/lib/i18n';
 export function Navbar() {
   const { data: session } = useSession();
   const { t } = useTranslation();
+  const router = useRouter();
 
   return (
     <nav className="border-b bg-white shadow-soft" role="navigation" aria-label="Main navigation">
@@ -37,7 +39,13 @@ export function Navbar() {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => signOut({ callbackUrl: '/' })}
+                onClick={async () => {
+                  await signOut({ 
+                    redirect: false 
+                  });
+                  router.push('/');
+                  router.refresh();
+                }}
               >
                 {t('nav.logout')}
               </Button>

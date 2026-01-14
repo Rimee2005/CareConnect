@@ -121,12 +121,20 @@ export default function GuardianDetailPage() {
         return;
       }
 
-      setToastMessage('Booking request sent successfully!');
+      setToastMessage('✅ Service booked successfully! Your booking request has been sent.');
       setShowToast(true);
       setBookingNotes('');
     } catch (error) {
       setToastMessage('An error occurred. Please try again.');
       setShowToast(true);
+    }
+  };
+
+  const handleChat = () => {
+    // Check if there's an existing booking with this guardian
+    // For now, redirect to a chat page or show a message
+    if (guardian) {
+      router.push(`/vital/chat/${params.id}`);
     }
   };
 
@@ -314,7 +322,12 @@ export default function GuardianDetailPage() {
                 <Button onClick={handleBook} className="w-full" size="lg">
                   {t('vital.book')}
                 </Button>
-                <Button variant="outline" className="w-full" size="lg">
+                <Button 
+                  variant="outline" 
+                  className="w-full" 
+                  size="lg"
+                  onClick={handleChat}
+                >
                   {t('vital.chat')}
                 </Button>
               </CardContent>
@@ -325,8 +338,9 @@ export default function GuardianDetailPage() {
         {showToast && (
           <Toast
             message={toastMessage}
-            type={toastMessage.includes('success') ? 'success' : 'error'}
+            type={toastMessage.includes('success') || toastMessage.includes('✅') ? 'success' : 'error'}
             onClose={() => setShowToast(false)}
+            duration={toastMessage.includes('success') || toastMessage.includes('✅') ? 4000 : 5000}
           />
         )}
       </div>

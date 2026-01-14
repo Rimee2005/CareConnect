@@ -16,12 +16,38 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
     }
 
+    // Additional validation
+    if (file.size === 0) {
+      return NextResponse.json({ error: 'File is empty' }, { status: 400 });
+    }
+
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      return NextResponse.json({ 
+        error: 'Invalid file type. Please upload a JPEG, PNG, GIF, or WebP image.' 
+      }, { status: 400 });
+    }
+
+    // Validate file size (10MB max)
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (file.size > maxSize) {
+      return NextResponse.json({ 
+        error: 'File size exceeds 10MB limit. Please upload a smaller image.' 
+      }, { status: 400 });
+    }
+
     const url = await uploadToCloudinary(file);
+
+    if (!url) {
+      return NextResponse.json({ error: 'Upload failed - no URL returned' }, { status: 500 });
+    }
 
     return NextResponse.json({ url });
   } catch (error: any) {
     console.error('Upload error:', error);
-    return NextResponse.json({ error: error.message || 'Upload failed' }, { status: 500 });
+    const errorMessage = error.message || 'Upload failed. Please try again.';
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
 

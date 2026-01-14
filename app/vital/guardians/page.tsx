@@ -1,22 +1,33 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Navbar } from '@/components/Navbar';
+import { VitalNavbar } from '@/components/VitalNavbar';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Select } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 import { useTranslation } from '@/lib/i18n';
-import { Search, Star, MapPin, Shield } from 'lucide-react';
+import { Search, Star, MapPin, Shield, Heart, X, ArrowLeft, SlidersHorizontal, Calendar, Clock } from 'lucide-react';
 
 interface Guardian {
   _id: string;
   name: string;
+  age: number;
+  gender: string;
   experience: number;
   specialization: string[];
+  availability: {
+    days: string[];
+    hours: {
+      start: string;
+      end: string;
+    };
+  };
   profilePhoto?: string;
   isVerified: boolean;
   serviceRadius: number;
@@ -24,15 +35,29 @@ interface Guardian {
     city?: string;
   };
   averageRating?: number;
+  reviewCount?: number;
 }
 
 export default function GuardiansPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { t } = useTranslation();
   const [guardians, setGuardians] = useState<Guardian[]>([]);
+  const [savedGuardians, setSavedGuardians] = useState<Guardian[]>([]);
+  const [savedGuardianIds, setSavedGuardianIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
+  
+  // Filter states
+  const [selectedSpecializations, setSelectedSpecializations] = useState<string[]>([]);
+  const [selectedDays, setSelectedDays] = useState<string[]>([]);
+  const [selectedGender, setSelectedGender] = useState<string>('');
+  const [experienceRange, setExperienceRange] = useState<[number, number]>([0, 50]);
+  const [distanceRange, setDistanceRange] = useState<[number, number]>([0, 100]);
+  const [sortBy, setSortBy] = useState<string>('rating');
+  const [activeTab, setActiveTab] = useState<'all' | 'saved'>(searchParams.get('tab') === 'saved' ? 'saved' : 'all');
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -42,6 +67,7 @@ export default function GuardiansPage() {
 
     if (status === 'authenticated' && session?.user?.role === 'VITAL') {
       fetchGuardians();
+      fetchSavedGuardians();
     }
   }, [session, status, router]);
 
@@ -59,17 +85,186 @@ export default function GuardiansPage() {
     }
   };
 
-  const filteredGuardians = guardians.filter((guardian) =>
-    guardian.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    guardian.specialization.some((spec) =>
-      spec.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-  );
+  const fetchSavedGuardians = async () => {
+    try {
+      const res = await fetch('/api/vital/saved-guardians');
+      if (res.ok) {
+        const data = await res.json();
+        setSavedGuardians(data);
+        setSavedGuardianIds(new Set(data.map((g: Guardian) => g._id)));
+      }
+    } catch (error) {
+      console.error('Failed to fetch saved guardians:', error);
+    }
+  };
+
+  const toggleSaveGuardian = async (guardianId: string) => {
+    const isSaved = savedGuardianIds.has(guardianId);
+    
+    try {
+      if (isSaved) {
+        await fetch(`/api/vital/saved-guardians?guardianId=${guardianId}`, {
+          method: 'DELETE',
+        });
+        setSavedGuardianIds(prev => {
+          const next = new Set(prev);
+          next.delete(guardianId);
+          return next;
+        });
+        setSavedGuardians(prev => prev.filter(g => g._id !== guardianId));
+      } else {
+        await fetch('/api/vital/saved-guardians', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ guardianId }),
+        });
+        const guardian = guardians.find(g => g._id === guardianId);
+        if (guardian) {
+          setSavedGuardianIds(prev => new Set(prev).add(guardianId));
+          setSavedGuardians(prev => [...prev, guardian]);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to toggle save:', error);
+    }
+  };
+
+  // Get all unique specializations
+  const allSpecializations = useMemo(() => {
+    const specs = new Set<string>();
+    guardians.forEach(g => g.specialization.forEach(s => specs.add(s)));
+    return Array.from(specs).sort();
+  }, [guardians]);
+
+  // Get this week's availability for a guardian
+  const getThisWeekAvailability = (guardian: Guardian): 'high' | 'medium' | 'low' => {
+    const today = new Date();
+    const dayOfWeek = today.getDay();
+    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    
+    // Check next 7 days
+    let availableDays = 0;
+    for (let i = 0; i < 7; i++) {
+      const checkDay = (dayOfWeek + i) % 7;
+      const dayName = dayNames[checkDay];
+      if (guardian.availability.days.includes(dayName)) {
+        availableDays++;
+      }
+    }
+    
+    if (availableDays >= 5) return 'high';
+    if (availableDays >= 3) return 'medium';
+    return 'low';
+  };
+
+  // Check if any filters are active
+  const hasActiveFilters = useMemo(() => {
+    return (
+      selectedSpecializations.length > 0 ||
+      selectedDays.length > 0 ||
+      selectedGender !== '' ||
+      experienceRange[0] > 0 ||
+      experienceRange[1] < 50 ||
+      distanceRange[0] > 0 ||
+      distanceRange[1] < 100 ||
+      searchTerm !== ''
+    );
+  }, [selectedSpecializations, selectedDays, selectedGender, experienceRange, distanceRange, searchTerm]);
+
+  // Clear all filters
+  const clearAllFilters = () => {
+    setSelectedSpecializations([]);
+    setSelectedDays([]);
+    setSelectedGender('');
+    setExperienceRange([0, 50]);
+    setDistanceRange([0, 100]);
+    setSearchTerm('');
+  };
+
+  // Filter and sort guardians
+  const filteredAndSortedGuardians = useMemo(() => {
+    let filtered = activeTab === 'saved' ? savedGuardians : guardians;
+
+    // Search filter
+    if (searchTerm) {
+      filtered = filtered.filter(
+        (guardian) =>
+          guardian.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          guardian.specialization.some((spec) =>
+            spec.toLowerCase().includes(searchTerm.toLowerCase())
+          )
+      );
+    }
+
+    // Specialization filter
+    if (selectedSpecializations.length > 0) {
+      filtered = filtered.filter((guardian) =>
+        selectedSpecializations.some((spec) =>
+          guardian.specialization.includes(spec)
+        )
+      );
+    }
+
+    // Availability days filter
+    if (selectedDays.length > 0) {
+      filtered = filtered.filter((guardian) =>
+        selectedDays.some((day) => guardian.availability.days.includes(day))
+      );
+    }
+
+    // Gender filter
+    if (selectedGender) {
+      filtered = filtered.filter((guardian) => guardian.gender === selectedGender);
+    }
+
+    // Experience range filter
+    filtered = filtered.filter(
+      (guardian) =>
+        guardian.experience >= experienceRange[0] &&
+        guardian.experience <= experienceRange[1]
+    );
+
+    // Distance/Service radius filter
+    filtered = filtered.filter(
+      (guardian) =>
+        guardian.serviceRadius >= distanceRange[0] &&
+        guardian.serviceRadius <= distanceRange[1]
+    );
+
+    // Sorting
+    const sorted = [...filtered].sort((a, b) => {
+      switch (sortBy) {
+        case 'rating':
+          return (b.averageRating || 0) - (a.averageRating || 0);
+        case 'experience':
+          return b.experience - a.experience;
+        case 'distance':
+          return a.serviceRadius - b.serviceRadius;
+        case 'name':
+          return a.name.localeCompare(b.name);
+        default:
+          return 0;
+      }
+    });
+
+    return sorted;
+  }, [
+    guardians,
+    savedGuardians,
+    activeTab,
+    searchTerm,
+    selectedSpecializations,
+    selectedDays,
+    selectedGender,
+    experienceRange,
+    distanceRange,
+    sortBy,
+  ]);
 
   if (status === 'loading' || loading) {
     return (
-      <div className="min-h-screen">
-        <Navbar />
+      <div className="min-h-screen bg-background dark:bg-background-dark transition-colors">
+        <VitalNavbar />
         <div className="container mx-auto px-4 py-8">
           <p>{t('common.loading')}</p>
         </div>
@@ -78,96 +273,482 @@ export default function GuardiansPage() {
   }
 
   return (
-    <div className="min-h-screen">
-      <Navbar />
+    <div className="min-h-screen bg-background dark:bg-background-dark transition-colors">
+      <VitalNavbar />
       <div className="container mx-auto px-4 py-6 sm:px-6 sm:py-8">
+        {/* Back to Dashboard */}
+        <Link href="/vital/dashboard">
+          <Button variant="ghost" className="mb-6 text-sm sm:text-base">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Dashboard
+          </Button>
+        </Link>
+
+        {/* Header */}
         <div className="mb-6 sm:mb-8">
-          <h1 className="mb-3 text-2xl font-bold text-text sm:text-3xl sm:mb-4 dark:text-text-dark transition-colors">{t('vital.browse')}</h1>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted sm:h-5 sm:w-5" />
-            <Input
-              placeholder="Search by name or specialization..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9 text-sm sm:pl-10 sm:text-base"
-            />
+          <h1 className="mb-4 text-2xl font-bold text-text sm:text-3xl dark:text-text-dark transition-colors">
+            {activeTab === 'saved' ? 'Saved Guardians' : t('vital.browse')}
+          </h1>
+          
+          {/* Tabs */}
+          <div className="mb-4 flex gap-2 border-b border-border dark:border-border-dark">
+            <button
+              onClick={() => setActiveTab('all')}
+              className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${
+                activeTab === 'all'
+                  ? 'border-primary text-primary dark:border-primary-dark-mode dark:text-primary-dark-mode'
+                  : 'border-transparent text-text-muted dark:text-text-dark-muted hover:text-text dark:hover:text-text-dark'
+              }`}
+            >
+              All Guardians ({guardians.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('saved')}
+              className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${
+                activeTab === 'saved'
+                  ? 'border-primary text-primary dark:border-primary-dark-mode dark:text-primary-dark-mode'
+                  : 'border-transparent text-text-muted dark:text-text-dark-muted hover:text-text dark:hover:text-text-dark'
+              }`}
+            >
+              Saved ({savedGuardianIds.size})
+            </button>
           </div>
+
+          {/* Search and Filter Toggle */}
+          <div className="flex gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted sm:h-5 sm:w-5" />
+              <Input
+                placeholder="Search by name or specialization..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9 text-sm sm:pl-10 sm:text-base"
+              />
+            </div>
+            <Button
+              variant="outline"
+              onClick={() => setShowFilters(!showFilters)}
+              className="flex items-center gap-2"
+            >
+              <SlidersHorizontal className="h-4 w-4" />
+              Filters
+              {hasActiveFilters && (
+                <Badge variant="default" className="ml-1 h-5 w-5 rounded-full p-0 text-xs">
+                  {[
+                    selectedSpecializations.length,
+                    selectedDays.length,
+                    selectedGender ? 1 : 0,
+                    experienceRange[0] > 0 || experienceRange[1] < 50 ? 1 : 0,
+                    distanceRange[0] > 0 || distanceRange[1] < 100 ? 1 : 0,
+                  ].reduce((a, b) => a + b, 0)}
+                </Badge>
+              )}
+            </Button>
+          </div>
+
+          {/* Applied Filter Chips */}
+          {hasActiveFilters && (
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <span className="text-sm font-medium text-text-muted dark:text-text-dark-muted">Active filters:</span>
+              {selectedSpecializations.map((spec) => (
+                <Badge
+                  key={spec}
+                  variant="outline"
+                  className="flex items-center gap-1 cursor-pointer hover:bg-background-secondary dark:hover:bg-background-dark-secondary"
+                  onClick={() => setSelectedSpecializations(selectedSpecializations.filter(s => s !== spec))}
+                >
+                  {spec}
+                  <X className="h-3 w-3" />
+                </Badge>
+              ))}
+              {selectedDays.map((day) => (
+                <Badge
+                  key={day}
+                  variant="outline"
+                  className="flex items-center gap-1 cursor-pointer hover:bg-background-secondary dark:hover:bg-background-dark-secondary"
+                  onClick={() => setSelectedDays(selectedDays.filter(d => d !== day))}
+                >
+                  {day}
+                  <X className="h-3 w-3" />
+                </Badge>
+              ))}
+              {selectedGender && (
+                <Badge
+                  variant="outline"
+                  className="flex items-center gap-1 cursor-pointer hover:bg-background-secondary dark:hover:bg-background-dark-secondary"
+                  onClick={() => setSelectedGender('')}
+                >
+                  {selectedGender}
+                  <X className="h-3 w-3" />
+                </Badge>
+              )}
+              {(experienceRange[0] > 0 || experienceRange[1] < 50) && (
+                <Badge
+                  variant="outline"
+                  className="flex items-center gap-1 cursor-pointer hover:bg-background-secondary dark:hover:bg-background-dark-secondary"
+                  onClick={() => setExperienceRange([0, 50])}
+                >
+                  Experience: {experienceRange[0]}-{experienceRange[1]} years
+                  <X className="h-3 w-3" />
+                </Badge>
+              )}
+              {(distanceRange[0] > 0 || distanceRange[1] < 100) && (
+                <Badge
+                  variant="outline"
+                  className="flex items-center gap-1 cursor-pointer hover:bg-background-secondary dark:hover:bg-background-dark-secondary"
+                  onClick={() => setDistanceRange([0, 100])}
+                >
+                  Radius: {distanceRange[0]}-{distanceRange[1]} km
+                  <X className="h-3 w-3" />
+                </Badge>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearAllFilters}
+                className="h-6 text-xs"
+              >
+                Clear All
+              </Button>
+            </div>
+          )}
         </div>
 
-        <div className="grid gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredGuardians.map((guardian) => (
-            <Card key={guardian._id} className="overflow-hidden">
-              <CardContent className="p-0">
-                <div className="relative">
-                  {guardian.profilePhoto ? (
-                    <img
-                      src={guardian.profilePhoto}
-                      alt={guardian.name}
-                      className="h-48 w-full object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-48 items-center justify-center bg-primary/10">
-                      <span className="text-4xl text-primary">
-                        {guardian.name.charAt(0).toUpperCase()}
-                      </span>
-                    </div>
-                  )}
-                  {guardian.isVerified && (
-                    <Badge
-                      variant="success"
-                      className="absolute right-2 top-2 flex items-center gap-1"
-                    >
-                      <Shield className="h-3 w-3" />
-                      Verified
-                    </Badge>
-                  )}
-                </div>
-                <div className="p-3 sm:p-4">
-                  <h3 className="mb-2 text-lg font-semibold text-text dark:text-text-dark sm:text-xl transition-colors">{guardian.name}</h3>
-                  <div className="mb-2 flex flex-wrap gap-1">
-                    {guardian.specialization.slice(0, 2).map((spec, idx) => (
-                      <Badge key={idx} variant="outline" className="text-xs">
-                        {spec}
-                      </Badge>
+        {/* Filters Panel */}
+        {showFilters && (
+          <Card className="mb-6 animate-in slide-in-from-top-2 duration-300 border-primary/20">
+            <CardContent className="p-4 sm:p-6">
+              <div className="mb-6 flex items-center justify-between border-b border-border dark:border-border-dark pb-4">
+                <h3 className="text-lg font-semibold text-text dark:text-text-dark transition-colors">
+                  Filter Guardians
+                </h3>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearAllFilters}
+                  disabled={!hasActiveFilters}
+                >
+                  Clear All
+                </Button>
+              </div>
+
+              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {/* Specialization Filter */}
+                <div className="space-y-3">
+                  <Label className="text-sm font-semibold text-text dark:text-text-dark">Specialization</Label>
+                  <div className="max-h-40 space-y-2 overflow-y-auto rounded-md border border-border dark:border-border-dark p-3 bg-background-secondary dark:bg-background-dark-secondary">
+                    {allSpecializations.map((spec) => (
+                      <label key={spec} className="flex items-center gap-2 cursor-pointer hover:bg-background dark:hover:bg-background-dark p-1 rounded">
+                        <input
+                          type="checkbox"
+                          checked={selectedSpecializations.includes(spec)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedSpecializations([...selectedSpecializations, spec]);
+                            } else {
+                              setSelectedSpecializations(selectedSpecializations.filter(s => s !== spec));
+                            }
+                          }}
+                          className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary dark:border-border-dark dark:focus:ring-primary-dark-mode"
+                        />
+                        <span className="text-sm text-text dark:text-text-dark transition-colors">{spec}</span>
+                      </label>
                     ))}
-                    {guardian.specialization.length > 2 && (
-                      <Badge variant="outline" className="text-xs">
-                        +{guardian.specialization.length - 2}
-                      </Badge>
-                    )}
-                  </div>
-                  <div className="mb-2 flex flex-wrap items-center gap-3 text-xs text-text-muted dark:text-text-dark-light sm:text-sm sm:gap-4 transition-colors">
-                    <span>{guardian.experience} years experience</span>
-                    {guardian.averageRating && (
-                      <span className="flex items-center gap-1">
-                        <Star className="h-3 w-3 fill-warning text-warning sm:h-4 sm:w-4" />
-                        {guardian.averageRating.toFixed(1)}
-                      </span>
-                    )}
-                  </div>
-                  {guardian.location?.city && (
-                    <div className="mb-3 flex items-center gap-1 text-xs text-text-muted dark:text-text-dark-light sm:mb-4 sm:text-sm transition-colors">
-                      <MapPin className="h-3 w-3 sm:h-4 sm:w-4" />
-                      {guardian.location.city}
-                    </div>
-                  )}
-                  <div className="flex gap-2">
-                    <Link href={`/vital/guardians/${guardian._id}`} className="flex-1">
-                      <Button className="w-full text-xs sm:text-sm" size="sm">
-                        View Details
-                      </Button>
-                    </Link>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          ))}
+
+                {/* Availability Days Filter */}
+                <div className="space-y-3">
+                  <Label className="text-sm font-semibold text-text dark:text-text-dark">Available Days</Label>
+                  <div className="space-y-2 rounded-md border border-border dark:border-border-dark p-3 bg-background-secondary dark:bg-background-dark-secondary">
+                    {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day) => (
+                      <label key={day} className="flex items-center gap-2 cursor-pointer hover:bg-background dark:hover:bg-background-dark p-1 rounded">
+                        <input
+                          type="checkbox"
+                          checked={selectedDays.includes(day)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedDays([...selectedDays, day]);
+                            } else {
+                              setSelectedDays(selectedDays.filter(d => d !== day));
+                            }
+                          }}
+                          className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary dark:border-border-dark dark:focus:ring-primary-dark-mode"
+                        />
+                        <span className="text-sm text-text dark:text-text-dark transition-colors">{day}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Gender Filter */}
+                <div className="space-y-3">
+                  <Label htmlFor="gender" className="text-sm font-semibold text-text dark:text-text-dark">Gender</Label>
+                  <Select
+                    id="gender"
+                    value={selectedGender}
+                    onChange={(e) => setSelectedGender(e.target.value)}
+                  >
+                    <option value="">All Genders</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                    <option value="Prefer not to say">Prefer not to say</option>
+                  </Select>
+                </div>
+
+                {/* Experience Range */}
+                <div className="space-y-3">
+                  <Label className="text-sm font-semibold text-text dark:text-text-dark">
+                    Experience: {experienceRange[0]} - {experienceRange[1]} years
+                  </Label>
+                  <div className="space-y-3 rounded-md border border-border dark:border-border-dark p-4 bg-background-secondary dark:bg-background-dark-secondary">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="number"
+                        min="0"
+                        max="50"
+                        value={experienceRange[0]}
+                        onChange={(e) => setExperienceRange([Number(e.target.value), experienceRange[1]])}
+                        className="w-20"
+                      />
+                      <span className="text-sm text-text-muted dark:text-text-dark-muted">to</span>
+                      <Input
+                        type="number"
+                        min="0"
+                        max="50"
+                        value={experienceRange[1]}
+                        onChange={(e) => setExperienceRange([experienceRange[0], Number(e.target.value)])}
+                        className="w-20"
+                      />
+                    </div>
+                    <input
+                      type="range"
+                      min="0"
+                      max="50"
+                      value={experienceRange[0]}
+                      onChange={(e) => setExperienceRange([Number(e.target.value), experienceRange[1]])}
+                      className="w-full"
+                    />
+                    <input
+                      type="range"
+                      min="0"
+                      max="50"
+                      value={experienceRange[1]}
+                      onChange={(e) => setExperienceRange([experienceRange[0], Number(e.target.value)])}
+                      className="w-full"
+                    />
+                  </div>
+                </div>
+
+                {/* Distance Range */}
+                <div className="space-y-3">
+                  <Label className="text-sm font-semibold text-text dark:text-text-dark">
+                    Service Radius: {distanceRange[0]} - {distanceRange[1]} km
+                  </Label>
+                  <div className="space-y-3 rounded-md border border-border dark:border-border-dark p-4 bg-background-secondary dark:bg-background-dark-secondary">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={distanceRange[0]}
+                        onChange={(e) => setDistanceRange([Number(e.target.value), distanceRange[1]])}
+                        className="w-20"
+                      />
+                      <span className="text-sm text-text-muted dark:text-text-dark-muted">to</span>
+                      <Input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={distanceRange[1]}
+                        onChange={(e) => setDistanceRange([distanceRange[0], Number(e.target.value)])}
+                        className="w-20"
+                      />
+                    </div>
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      value={distanceRange[0]}
+                      onChange={(e) => setDistanceRange([Number(e.target.value), distanceRange[1]])}
+                      className="w-full"
+                    />
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      value={distanceRange[1]}
+                      onChange={(e) => setDistanceRange([distanceRange[0], Number(e.target.value)])}
+                      className="w-full"
+                    />
+                  </div>
+                </div>
+
+                {/* Sort By */}
+                <div className="space-y-3">
+                  <Label htmlFor="sort" className="text-sm font-semibold text-text dark:text-text-dark">Sort By</Label>
+                  <Select
+                    id="sort"
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
+                  >
+                    <option value="rating">Highest Rating</option>
+                    <option value="experience">Most Experience</option>
+                    <option value="distance">Nearest First</option>
+                    <option value="name">Name (A-Z)</option>
+                  </Select>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Results Count */}
+        <div className="mb-4 text-sm text-text-muted dark:text-text-dark-muted transition-colors">
+          Showing {filteredAndSortedGuardians.length} of {activeTab === 'saved' ? savedGuardians.length : guardians.length} {activeTab === 'saved' ? 'saved' : ''} guardians
         </div>
 
-        {filteredGuardians.length === 0 && (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <p className="text-text-muted">No guardians found</p>
+        {/* Guardian Cards */}
+        {filteredAndSortedGuardians.length > 0 ? (
+          <div className="grid gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {filteredAndSortedGuardians.map((guardian) => {
+              const availabilityStatus = getThisWeekAvailability(guardian);
+              const isSaved = savedGuardianIds.has(guardian._id);
+              
+              return (
+                <Card key={guardian._id} className="overflow-hidden hover:shadow-medium dark:hover:shadow-dark-medium transition-all duration-300 group">
+                  <CardContent className="p-0">
+                    <div className="relative">
+                      {/* This Week Availability Strip */}
+                      <div className={`h-1 w-full ${
+                        availabilityStatus === 'high' ? 'bg-success' :
+                        availabilityStatus === 'medium' ? 'bg-warning' :
+                        'bg-error'
+                      }`} />
+                      
+                      {guardian.profilePhoto ? (
+                        <img
+                          src={guardian.profilePhoto}
+                          alt={guardian.name}
+                          className="h-48 w-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-48 items-center justify-center bg-primary/10 dark:bg-primary-dark-mode/20">
+                          <span className="text-4xl text-primary dark:text-primary-dark-mode">
+                            {guardian.name.charAt(0).toUpperCase()}
+                          </span>
+                        </div>
+                      )}
+                      {guardian.isVerified && (
+                        <Badge
+                          variant="success"
+                          className="absolute left-2 top-2 flex items-center gap-1"
+                        >
+                          <Shield className="h-3 w-3" />
+                          Verified
+                        </Badge>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-2 top-2 h-8 w-8 rounded-full bg-background/90 dark:bg-background-dark/90 hover:bg-background dark:hover:bg-background-dark shadow-sm"
+                        onClick={() => toggleSaveGuardian(guardian._id)}
+                      >
+                        <Heart
+                          className={`h-4 w-4 transition-colors ${
+                            isSaved
+                              ? 'fill-secondary text-secondary dark:fill-secondary-dark-mode dark:text-secondary-dark-mode'
+                              : 'text-text-muted dark:text-text-dark-muted'
+                          }`}
+                        />
+                      </Button>
+                    </div>
+                    <div className="p-3 sm:p-4">
+                      <h3 className="mb-2 text-lg font-semibold text-text dark:text-text-dark sm:text-xl transition-colors">
+                        {guardian.name}
+                      </h3>
+                      <div className="mb-2 flex flex-wrap gap-1">
+                        {guardian.specialization.slice(0, 2).map((spec, idx) => (
+                          <Badge key={idx} variant="outline" className="text-xs">
+                            {spec}
+                          </Badge>
+                        ))}
+                        {guardian.specialization.length > 2 && (
+                          <Badge variant="outline" className="text-xs">
+                            +{guardian.specialization.length - 2}
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="mb-2 flex flex-wrap items-center gap-3 text-xs text-text-muted dark:text-text-dark-light sm:text-sm sm:gap-4 transition-colors">
+                        <span>{guardian.experience} years experience</span>
+                        {guardian.averageRating && (
+                          <span className="flex items-center gap-1">
+                            <Star className="h-3 w-3 fill-warning text-warning sm:h-4 sm:w-4" />
+                            {guardian.averageRating.toFixed(1)}
+                          </span>
+                        )}
+                      </div>
+                      {guardian.location?.city && (
+                        <div className="mb-3 flex items-center gap-1 text-xs text-text-muted dark:text-text-dark-light sm:mb-4 sm:text-sm transition-colors">
+                          <MapPin className="h-3 w-3 sm:h-4 sm:w-4" />
+                          {guardian.location.city} • {guardian.serviceRadius} km radius
+                        </div>
+                      )}
+                      <div className="flex gap-2">
+                        <Link href={`/vital/guardians/${guardian._id}`} className="flex-1">
+                          <Button className="w-full text-xs sm:text-sm" size="sm">
+                            View Details
+                          </Button>
+                        </Link>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        ) : (
+          /* Empty State */
+          <Card className="border-2 border-dashed border-primary/30 bg-primary/5 dark:bg-primary-dark-mode/10">
+            <CardContent className="flex flex-col items-center justify-center py-12 sm:py-16 px-6 text-center">
+              {activeTab === 'saved' ? (
+                <>
+                  <div className="mb-6 rounded-full bg-primary/10 p-6 dark:bg-primary-dark-mode/20">
+                    <Heart className="h-12 w-12 text-primary dark:text-primary-dark-mode" />
+                  </div>
+                  <h2 className="text-xl font-semibold text-text dark:text-text-dark mb-3 sm:text-2xl transition-colors">
+                    No saved guardians yet
+                  </h2>
+                  <p className="text-base text-text-muted dark:text-text-dark-muted mb-6 max-w-md transition-colors">
+                    Start browsing guardians and save your favorites by clicking the heart icon on their cards. Your saved guardians will appear here for easy access.
+                  </p>
+                  <Link href="/vital/guardians">
+                    <Button size="lg" onClick={() => setActiveTab('all')}>
+                      Browse Guardians
+                    </Button>
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <div className="mb-6 rounded-full bg-primary/10 p-6 dark:bg-primary-dark-mode/20">
+                    <Search className="h-12 w-12 text-primary dark:text-primary-dark-mode" />
+                  </div>
+                  <h2 className="text-xl font-semibold text-text dark:text-text-dark mb-3 sm:text-2xl transition-colors">
+                    No guardians found
+                  </h2>
+                  <p className="text-base text-text-muted dark:text-text-dark-muted mb-6 max-w-md transition-colors">
+                    {hasActiveFilters 
+                      ? 'No guardians match your current filters. Try adjusting your search criteria or clear filters to see all available guardians.'
+                      : 'No guardians are available at the moment. Please check back later.'}
+                  </p>
+                  {hasActiveFilters && (
+                    <Button size="lg" onClick={clearAllFilters}>
+                      Clear All Filters
+                    </Button>
+                  )}
+                </>
+              )}
             </CardContent>
           </Card>
         )}
@@ -175,4 +756,3 @@ export default function GuardiansPage() {
     </div>
   );
 }
-

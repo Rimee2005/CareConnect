@@ -16,7 +16,13 @@ export async function GET() {
       return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
     }
 
-    return NextResponse.json(profile);
+    // Ensure profilePhoto is included in response (even if empty string)
+    const profileResponse = {
+      ...profile,
+      profilePhoto: profile.profilePhoto || undefined,
+    };
+
+    return NextResponse.json(profileResponse);
   } catch (error: any) {
     if (error.message === 'Unauthorized' || error.message.includes('Forbidden')) {
       return NextResponse.json({ error: error.message }, { status: 401 });
@@ -37,9 +43,16 @@ export async function POST(request: Request) {
     }
 
     const data = await request.json();
+    
+    // Ensure profilePhoto is properly handled (empty string becomes undefined)
+    const profileData = {
+      ...data,
+      profilePhoto: data.profilePhoto && data.profilePhoto.trim() !== '' ? data.profilePhoto : undefined,
+    };
+    
     const profile = await VitalProfile.create({
       userId: session.user.id,
-      ...data,
+      ...profileData,
     });
 
     // Send email
@@ -66,9 +79,26 @@ export async function PUT(request: Request) {
     await connectDB();
 
     const data = await request.json();
+    
+    // Build update data - only include fields that should be updated
+    const updateData: any = { ...data };
+    
+    // Handle profilePhoto specifically
+    // If profilePhoto is provided in request (not undefined), use it
+    // If it's undefined, it won't be in the updateData (preserves existing)
+    if ('profilePhoto' in data) {
+      if (data.profilePhoto && typeof data.profilePhoto === 'string' && data.profilePhoto.trim() !== '') {
+        updateData.profilePhoto = data.profilePhoto.trim();
+      } else {
+        // Empty string or null means clear the photo
+        updateData.profilePhoto = '';
+      }
+    }
+    // If profilePhoto is not in data, it won't be in updateData, so MongoDB won't update it (preserves existing)
+    
     const profile = await VitalProfile.findOneAndUpdate(
       { userId: session.user.id },
-      data,
+      updateData,
       { new: true, runValidators: true }
     );
 

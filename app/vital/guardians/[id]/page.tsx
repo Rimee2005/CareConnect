@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, useParams } from 'next/navigation';
-import { Navbar } from '@/components/Navbar';
+import { VitalNavbar } from '@/components/VitalNavbar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -151,7 +151,7 @@ export default function GuardianDetailPage() {
   if (loading) {
     return (
       <div className="min-h-screen">
-        <Navbar />
+        <VitalNavbar />
         <div className="container mx-auto px-4 py-8">
           <p>{t('common.loading')}</p>
         </div>
@@ -162,7 +162,7 @@ export default function GuardianDetailPage() {
   if (!guardian) {
     return (
       <div className="min-h-screen">
-        <Navbar />
+        <VitalNavbar />
         <div className="container mx-auto px-4 py-8">
           <p>Guardian not found</p>
         </div>
@@ -172,7 +172,7 @@ export default function GuardianDetailPage() {
 
   return (
     <div className="min-h-screen">
-      <Navbar />
+      <VitalNavbar />
       <div className="container mx-auto px-4 py-6 sm:px-6 sm:py-8">
         <Button variant="ghost" onClick={() => router.back()} className="mb-4 text-sm sm:text-base">
           ← Back

@@ -54,6 +54,11 @@ export function VitalNavbar() {
         <div className="hidden items-center gap-4 md:flex">
           {session ? (
             <>
+              <Link href="/vital/dashboard">
+                <Button variant="ghost" size="sm" className="text-sm">
+                  {t('nav.dashboard')}
+                </Button>
+              </Link>
               <NotificationBell />
               <Link href="/vital/profile/create">
                 <Button variant="ghost" size="sm" className="text-sm">
@@ -139,11 +144,11 @@ export function VitalNavbar() {
               {session ? (
                 <div className="space-y-1">
                   <Link
-                    href="/vital/profile/create"
+                    href="/vital/dashboard"
                     className="block rounded-lg px-4 py-3 text-base font-medium text-text hover:bg-background-secondary dark:text-text-dark dark:hover:bg-background-dark-secondary transition-colors"
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    {t('nav.profile')}
+                    {t('nav.dashboard')}
                   </Link>
                   <button
                     onClick={handleLogout}

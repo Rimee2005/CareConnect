@@ -98,7 +98,11 @@ export async function GET() {
     }
 
     const bookings = await Booking.find({ vitalId: vitalProfile._id })
-      .populate('guardianId', 'name profilePhoto', GuardianProfile)
+      .populate({
+        path: 'guardianId',
+        select: 'name profilePhoto specialization availability',
+        model: GuardianProfile
+      })
       .sort({ createdAt: -1 })
       .lean();
 

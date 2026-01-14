@@ -5,12 +5,13 @@ import VitalProfile from '@/models/VitalProfile';
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await connectDB();
 
-    const reviews = await Review.find({ guardianId: params.id })
+    const { id } = await params;
+    const reviews = await Review.find({ guardianId: id })
       .populate('vitalId', 'name', VitalProfile)
       .sort({ createdAt: -1 })
       .lean();

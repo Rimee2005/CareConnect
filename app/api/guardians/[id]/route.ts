@@ -6,20 +6,26 @@ import Review from '@/models/Review';
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await requireVital();
     await connectDB();
 
-    const guardian = await GuardianProfile.findById(params.id).lean();
+    const { id } = await params;
+    
+    if (!id) {
+      return NextResponse.json({ error: 'Guardian ID is required' }, { status: 400 });
+    }
+
+    const guardian = await GuardianProfile.findById(id).lean();
 
     if (!guardian) {
       return NextResponse.json({ error: 'Guardian not found' }, { status: 404 });
     }
 
     // Calculate rating
-    const reviews = await Review.find({ guardianId: params.id }).lean();
+    const reviews = await Review.find({ guardianId: id }).lean();
     const ratings = reviews.map((r) => r.rating);
     const averageRating =
       ratings.length > 0 ? ratings.reduce((a, b) => a + b, 0) / ratings.length : undefined;

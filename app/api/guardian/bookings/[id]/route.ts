@@ -10,12 +10,13 @@ import { sendEmail, emailTemplates } from '@/lib/email';
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await requireGuardian();
     await connectDB();
 
+    const { id } = await params;
     const { action } = await request.json();
 
     if (action !== 'accept' && action !== 'reject') {
@@ -31,7 +32,7 @@ export async function PATCH(
     }
 
     const booking = await Booking.findOne({
-      _id: params.id,
+      _id: id,
       guardianId: guardianProfile._id,
     }).populate('vitalId', '', VitalProfile);
 

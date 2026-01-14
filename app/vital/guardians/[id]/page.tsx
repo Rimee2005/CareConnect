@@ -69,10 +69,19 @@ export default function GuardianDetailPage() {
 
   const fetchGuardian = async () => {
     try {
+      if (!params.id) {
+        console.error('No guardian ID provided');
+        setLoading(false);
+        return;
+      }
+      
       const res = await fetch(`/api/guardians/${params.id}`);
       if (res.ok) {
         const data = await res.json();
         setGuardian(data);
+      } else {
+        const errorData = await res.json();
+        console.error('Failed to fetch guardian:', errorData);
       }
     } catch (error) {
       console.error('Failed to fetch guardian:', error);

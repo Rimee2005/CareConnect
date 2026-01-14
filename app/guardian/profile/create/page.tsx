@@ -160,13 +160,13 @@ export default function CreateGuardianProfilePage() {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-background dark:bg-background-dark transition-colors">
       <Navbar />
       <div className="container mx-auto px-4 py-8">
         <Card className="mx-auto max-w-2xl">
           <CardHeader>
-            <CardTitle>Create Your Guardian Profile</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-text dark:text-text-dark transition-colors">Create Your Guardian Profile</CardTitle>
+            <CardDescription className="text-text-light dark:text-text-dark-light transition-colors">
               Tell us about your experience and availability to start receiving bookings
             </CardDescription>
           </CardHeader>
@@ -184,9 +184,9 @@ export default function CreateGuardianProfilePage() {
                   )}
                   <label
                     htmlFor="photo"
-                    className="flex cursor-pointer items-center gap-2 rounded-md border px-4 py-2 hover:bg-background-secondary"
+                    className="flex cursor-pointer items-center gap-2 rounded-md border border-gray-300 px-4 py-2 text-text hover:bg-background-secondary dark:border-border-dark dark:text-text-dark dark:hover:bg-background-dark-secondary transition-colors"
                   >
-                    <Upload className="h-4 w-4" />
+                    <Upload className="h-4 w-4 text-text dark:text-text-dark transition-colors" />
                     <span>Upload Photo</span>
                     <input
                       id="photo"
@@ -202,7 +202,7 @@ export default function CreateGuardianProfilePage() {
               <div className="space-y-2">
                 <Label htmlFor="name">Name *</Label>
                 <Input id="name" {...register('name')} />
-                {errors.name && <p className="text-sm text-error">{errors.name.message}</p>}
+                {errors.name && <p className="text-sm font-medium text-error dark:text-error transition-colors">{errors.name.message}</p>}
               </div>
 
               <div className="grid gap-4 md:grid-cols-2">
@@ -213,7 +213,7 @@ export default function CreateGuardianProfilePage() {
                     type="number"
                     {...register('age', { valueAsNumber: true })}
                   />
-                  {errors.age && <p className="text-sm text-error">{errors.age.message}</p>}
+                  {errors.age && <p className="text-sm font-medium text-error dark:text-error transition-colors">{errors.age.message}</p>}
                 </div>
 
                 <div className="space-y-2">
@@ -225,7 +225,7 @@ export default function CreateGuardianProfilePage() {
                     <option value="Other">Other</option>
                     <option value="Prefer not to say">Prefer not to say</option>
                   </Select>
-                  {errors.gender && <p className="text-sm text-error">{errors.gender.message}</p>}
+                  {errors.gender && <p className="text-sm font-medium text-error dark:text-error transition-colors">{errors.gender.message}</p>}
                 </div>
               </div>
 
@@ -238,7 +238,7 @@ export default function CreateGuardianProfilePage() {
                     {...register('experience', { valueAsNumber: true })}
                   />
                   {errors.experience && (
-                    <p className="text-sm text-error">{errors.experience.message}</p>
+                    <p className="text-sm font-medium text-error dark:text-error transition-colors">{errors.experience.message}</p>
                   )}
                 </div>
 
@@ -250,7 +250,7 @@ export default function CreateGuardianProfilePage() {
                     {...register('serviceRadius', { valueAsNumber: true })}
                   />
                   {errors.serviceRadius && (
-                    <p className="text-sm text-error">{errors.serviceRadius.message}</p>
+                    <p className="text-sm font-medium text-error dark:text-error transition-colors">{errors.serviceRadius.message}</p>
                   )}
                 </div>
               </div>
@@ -263,7 +263,7 @@ export default function CreateGuardianProfilePage() {
                   placeholder="e.g., Elderly Care, Post-Surgery Care, Medication Management"
                 />
                 {errors.specialization && (
-                  <p className="text-sm text-error">{errors.specialization.message}</p>
+                  <p className="text-sm font-medium text-error dark:text-error transition-colors">{errors.specialization.message}</p>
                 )}
               </div>
 
@@ -274,11 +274,11 @@ export default function CreateGuardianProfilePage() {
                   {...register('availabilityDays')}
                   placeholder="e.g., Monday, Tuesday, Wednesday, Thursday, Friday"
                 />
-                <p className="text-xs text-text-muted">
+                <p className="text-xs text-text-muted dark:text-text-dark-muted transition-colors">
                   Enter days: Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday
                 </p>
                 {errors.availabilityDays && (
-                  <p className="text-sm text-error">{errors.availabilityDays.message}</p>
+                  <p className="text-sm font-medium text-error dark:text-error transition-colors">{errors.availabilityDays.message}</p>
                 )}
               </div>
 
@@ -291,7 +291,7 @@ export default function CreateGuardianProfilePage() {
                     {...register('availabilityStart')}
                   />
                   {errors.availabilityStart && (
-                    <p className="text-sm text-error">{errors.availabilityStart.message}</p>
+                    <p className="text-sm font-medium text-error dark:text-error transition-colors">{errors.availabilityStart.message}</p>
                   )}
                 </div>
 
@@ -299,7 +299,7 @@ export default function CreateGuardianProfilePage() {
                   <Label htmlFor="availabilityEnd">Available Until *</Label>
                   <Input id="availabilityEnd" type="time" {...register('availabilityEnd')} />
                   {errors.availabilityEnd && (
-                    <p className="text-sm text-error">{errors.availabilityEnd.message}</p>
+                    <p className="text-sm font-medium text-error dark:text-error transition-colors">{errors.availabilityEnd.message}</p>
                   )}
                 </div>
               </div>
@@ -318,9 +318,9 @@ export default function CreateGuardianProfilePage() {
                 </div>
                 <label
                   htmlFor="certifications"
-                  className="flex cursor-pointer items-center gap-2 rounded-md border px-4 py-2 hover:bg-background-secondary"
+                  className="flex cursor-pointer items-center gap-2 rounded-md border border-gray-300 px-4 py-2 text-text hover:bg-background-secondary dark:border-border-dark dark:text-text-dark dark:hover:bg-background-dark-secondary transition-colors"
                 >
-                  <Upload className="h-4 w-4" />
+                  <Upload className="h-4 w-4 text-text dark:text-text-dark transition-colors" />
                   <span>Upload Certifications</span>
                   <input
                     id="certifications"
@@ -333,7 +333,7 @@ export default function CreateGuardianProfilePage() {
                 </label>
               </div>
 
-              {error && <p className="text-sm text-error">{error}</p>}
+              {error && <p className="text-sm font-medium text-error dark:text-error transition-colors">{error}</p>}
 
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? t('common.loading') : 'Create Profile'}

@@ -134,24 +134,24 @@ export function NotificationBell() {
             onClick={() => setIsOpen(false)}
             aria-hidden="true"
           />
-          <div className="absolute right-0 top-12 z-50 w-80 rounded-lg border bg-white shadow-medium">
-            <div className="border-b p-4">
-              <h3 className="font-semibold">Notifications</h3>
+          <div className="absolute right-0 top-12 z-50 w-[calc(100vw-2rem)] max-w-80 rounded-lg border border-border bg-background dark:bg-background-dark dark:border-border-dark shadow-medium dark:shadow-dark-medium transition-colors sm:w-80">
+            <div className="border-b border-border dark:border-border-dark p-3 sm:p-4">
+              <h3 className="text-sm font-semibold text-text dark:text-text-dark sm:text-base transition-colors">Notifications</h3>
             </div>
-            <div className="max-h-96 overflow-y-auto">
+            <div className="max-h-[calc(100vh-12rem)] overflow-y-auto sm:max-h-96">
               {notifications.length === 0 ? (
                 <p className="p-4 text-center text-text-muted">No notifications</p>
               ) : (
                 notifications.map((notification) => (
                   <div
                     key={notification._id}
-                    className={`border-b p-4 hover:bg-background-secondary cursor-pointer transition-colors ${
-                      !notification.read ? 'bg-primary/5' : ''
+                    className={`border-b border-border dark:border-border-dark p-3 hover:bg-background-secondary dark:hover:bg-background-dark-secondary cursor-pointer transition-colors sm:p-4 ${
+                      !notification.read ? 'bg-primary/5 dark:bg-primary-dark-mode/10' : ''
                     }`}
                     onClick={() => handleNotificationClick(notification)}
                   >
-                    <p className="text-sm font-medium">{notification.message}</p>
-                    <p className="mt-1 text-xs text-text-muted">
+                    <p className="text-xs font-medium text-text dark:text-text-dark sm:text-sm transition-colors">{notification.message}</p>
+                    <p className="mt-1 text-xs text-text-muted dark:text-text-dark-light">
                       {new Date(notification.createdAt).toLocaleString()}
                     </p>
                   </div>

@@ -16,7 +16,27 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={inter.variable}>
+    <html lang="en" className={inter.variable} suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var theme = localStorage.getItem('careconnect-theme');
+                  var systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                  var appliedTheme = theme || systemTheme;
+                  if (appliedTheme === 'dark') {
+                    document.documentElement.classList.add('dark');
+                  }
+                  var lang = localStorage.getItem('careconnect-language') || 'en';
+                  document.documentElement.lang = lang;
+                } catch (e) {}
+              })();
+            `,
+          }}
+        />
+      </head>
       <body>
         <Providers>{children}</Providers>
       </body>

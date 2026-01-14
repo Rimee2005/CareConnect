@@ -243,7 +243,7 @@ export default function ChatPage() {
             {/* Message Input */}
             <form
               onSubmit={handleSendMessage}
-              className="border-t p-4 flex gap-2 bg-white"
+              className="border-t border-border dark:border-border-dark p-4 flex gap-2 bg-white dark:bg-background-dark-secondary transition-colors"
             >
               <Input
                 value={message}

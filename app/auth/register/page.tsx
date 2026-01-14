@@ -69,14 +69,26 @@ export default function RegisterPage() {
       if (signInResult?.error) {
         // If auto-login fails, redirect to login page
         router.push('/auth/login?registered=true');
+        setLoading(false);
         return;
       }
 
-      // Refresh router to update session
-      router.refresh();
+      // Wait a moment for the session to be updated, then fetch it
+      await new Promise(resolve => setTimeout(resolve, 200));
       
-      // Redirect to profile creation after successful login
-      router.push(`/${role.toLowerCase()}/profile/create`);
+      // Get the user's role from the session after signIn
+      const sessionRes = await fetch('/api/auth/session', { cache: 'no-store' });
+      const session = await sessionRes.json();
+      
+      // Redirect to dashboard based on role (not profile creation)
+      // The dashboard will handle checking if profile exists and redirecting to profile creation if needed
+      if (session?.user?.role) {
+        const dashboardUrl = `/${session.user.role.toLowerCase()}/dashboard`;
+        window.location.href = dashboardUrl;
+      } else {
+        // Fallback to role-based dashboard (use the role from registration)
+        window.location.href = `/${role.toLowerCase()}/dashboard`;
+      }
     } catch (err) {
       setError('An error occurred. Please try again.');
     } finally {
@@ -85,19 +97,19 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-background dark:bg-background-dark transition-colors">
       <Navbar />
-      <div className="container mx-auto flex min-h-[calc(100vh-4rem)] items-center justify-center px-4">
+      <div className="container mx-auto flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-8 sm:py-12">
         <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle className="text-2xl">{t('nav.register')}</CardTitle>
-            <CardDescription>Create your CareConnect account</CardDescription>
+          <CardHeader className="px-4 sm:px-6">
+            <CardTitle className="text-xl sm:text-2xl text-text dark:text-text-dark transition-colors">{t('nav.register')}</CardTitle>
+            <CardDescription className="text-sm sm:text-base text-text-light dark:text-text-dark-light transition-colors">Create your CareConnect account</CardDescription>
           </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
+          <CardContent className="px-4 sm:px-6">
+            <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="role">I am a</Label>
-                <div className="flex gap-2">
+                <Label htmlFor="role" className="text-sm sm:text-base">I am a</Label>
+                <div className="flex gap-2 sm:gap-3">
                   <Button
                     type="button"
                     variant={role === 'VITAL' ? 'default' : 'outline'}
@@ -150,14 +162,14 @@ export default function RegisterPage() {
                   aria-required="true"
                 />
               </div>
-              {error && <p className="text-sm text-error">{error}</p>}
+              {error && <p className="text-sm font-medium text-error dark:text-error transition-colors">{error}</p>}
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? t('common.loading') : t('nav.register')}
               </Button>
             </form>
-            <p className="mt-4 text-center text-sm text-text-muted">
+            <p className="mt-4 text-center text-sm text-text-muted dark:text-text-dark-muted transition-colors">
               Already have an account?{' '}
-              <Link href="/auth/login" className="text-primary hover:underline">
+              <Link href="/auth/login" className="text-primary hover:underline dark:text-primary-dark-mode dark:hover:text-primary-dark-mode-hover transition-colors">
                 {t('nav.login')}
               </Link>
             </p>

@@ -148,13 +148,13 @@ export default function GuardianDashboardPage() {
   return (
     <div className="min-h-screen">
       <Navbar />
-      <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-text">Welcome, {profile.name}!</h1>
-          <p className="text-text-muted">Your Guardian dashboard</p>
+      <div className="container mx-auto px-4 py-6 sm:px-6 sm:py-8">
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-2xl font-bold text-text sm:text-3xl dark:text-text-dark transition-colors">Welcome, {profile.name}!</h1>
+          <p className="text-sm text-text-muted sm:text-base dark:text-text-dark-light transition-colors">Your Guardian dashboard</p>
         </div>
 
-        <div className="mb-8 grid gap-6 md:grid-cols-2">
+        <div className="mb-6 grid gap-4 sm:gap-6 sm:mb-8 md:grid-cols-2">
           <Card>
             <CardHeader>
               <CardTitle>My Profile</CardTitle>
@@ -177,7 +177,7 @@ export default function GuardianDashboardPage() {
                 )}
                 <div>
                   <p className="font-semibold">{profile.name}</p>
-                  <p className="text-sm text-text-muted">{profile.experience} years experience</p>
+                  <p className="text-sm text-text-muted dark:text-text-dark-muted transition-colors">{profile.experience} years experience</p>
                 </div>
               </div>
               <Button variant="outline" className="mt-4 w-full">
@@ -195,8 +195,8 @@ export default function GuardianDashboardPage() {
               <CardDescription>Manage your booking requests</CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-2xl font-bold text-text">{bookings.length}</p>
-              <p className="text-sm text-text-muted">Total bookings</p>
+              <p className="text-2xl font-bold text-text dark:text-text-dark transition-colors">{bookings.length}</p>
+              <p className="text-sm text-text-muted dark:text-text-dark-muted transition-colors">Total bookings</p>
             </CardContent>
           </Card>
         </div>
@@ -207,38 +207,38 @@ export default function GuardianDashboardPage() {
           </CardHeader>
           <CardContent>
             {bookings.length === 0 ? (
-              <p className="py-8 text-center text-text-muted">No bookings yet</p>
+              <p className="py-8 text-center text-text-muted dark:text-text-dark-muted transition-colors">No bookings yet</p>
             ) : (
               <div className="space-y-4">
                 {bookings.map((booking) => (
                   <div
                     key={booking._id}
-                    className="flex items-center justify-between rounded-lg border p-4"
+                    className="flex flex-col gap-3 rounded-lg border border-border dark:border-border-dark p-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:p-4 transition-colors"
                   >
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-3 sm:gap-4">
                       {booking.vitalId.profilePhoto ? (
                         <img
                           src={booking.vitalId.profilePhoto}
                           alt={booking.vitalId.name}
-                          className="h-12 w-12 rounded-full object-cover"
+                          className="h-10 w-10 flex-shrink-0 rounded-full object-cover sm:h-12 sm:w-12"
                         />
                       ) : (
-                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-                          <User className="h-6 w-6 text-primary" />
+                        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 dark:bg-primary-dark-mode/20 sm:h-12 sm:w-12 transition-colors">
+                          <User className="h-5 w-5 text-primary dark:text-primary-dark-mode sm:h-6 sm:w-6 transition-colors" />
                         </div>
                       )}
-                      <div>
-                        <p className="font-semibold">{booking.vitalId.name}</p>
-                        <p className="text-sm text-text-muted">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-semibold text-text dark:text-text-dark sm:text-base transition-colors">{booking.vitalId.name}</p>
+                        <p className="text-xs text-text-muted dark:text-text-dark-light sm:text-sm transition-colors">
                           {new Date(booking.createdAt).toLocaleDateString()}
                         </p>
                         {booking.notes && (
-                          <p className="mt-1 text-sm text-text">{booking.notes}</p>
+                          <p className="mt-1 text-xs text-text dark:text-text-dark sm:text-sm line-clamp-2 transition-colors">{booking.notes}</p>
                         )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-4">
-                      <Badge variant={statusColors[booking.status as keyof typeof statusColors]}>
+                    <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:gap-4">
+                      <Badge variant={statusColors[booking.status as keyof typeof statusColors]} className="self-start sm:self-auto">
                         {statusLabels[booking.status as keyof typeof statusLabels]}
                       </Badge>
                       {booking.status === 'PENDING' && (
@@ -246,6 +246,7 @@ export default function GuardianDashboardPage() {
                           <Button
                             size="sm"
                             onClick={() => handleBookingAction(booking._id, 'accept')}
+                            className="flex-1 sm:flex-none text-xs sm:text-sm"
                           >
                             {t('guardian.accept')}
                           </Button>
@@ -253,6 +254,7 @@ export default function GuardianDashboardPage() {
                             size="sm"
                             variant="destructive"
                             onClick={() => handleBookingAction(booking._id, 'reject')}
+                            className="flex-1 sm:flex-none text-xs sm:text-sm"
                           >
                             {t('guardian.reject')}
                           </Button>

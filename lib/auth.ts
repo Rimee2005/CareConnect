@@ -56,6 +56,15 @@ export const authOptions: NextAuthOptions = {
       }
       return session;
     },
+    async redirect({ url, baseUrl }) {
+      // If redirecting to home page or auth pages, redirect to dashboard based on role
+      // This will be handled by checking the session in the login/register pages
+      // For now, allow the default behavior but we'll override in pages
+      if (url.startsWith(baseUrl)) {
+        return url;
+      }
+      return baseUrl;
+    },
   },
   pages: {
     signIn: '/auth/login',

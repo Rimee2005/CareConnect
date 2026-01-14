@@ -11,7 +11,7 @@ import { NotificationBell } from './NotificationBell';
 import { useTranslation } from '@/lib/i18n';
 import { Menu, X } from 'lucide-react';
 
-export function Navbar() {
+export function VitalNavbar() {
   const { data: session } = useSession();
   const { t } = useTranslation();
   const router = useRouter();
@@ -40,10 +40,10 @@ export function Navbar() {
   };
 
   return (
-    <nav className="sticky top-0 z-50 border-b border-border bg-background dark:bg-background-dark dark:border-border-dark shadow-soft dark:shadow-dark-soft transition-colors" role="navigation" aria-label="Main navigation">
+    <nav className="sticky top-0 z-50 border-b border-border bg-background dark:bg-background-dark dark:border-border dark:shadow-dark-soft shadow-soft transition-colors" role="navigation" aria-label="Vital navigation">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <Link 
-          href="/" 
+          href="/vital/dashboard" 
           className="text-lg font-bold text-primary dark:text-primary-dark-mode transition-colors sm:text-xl"
           onClick={() => setMobileMenuOpen(false)}
         >
@@ -51,20 +51,13 @@ export function Navbar() {
         </Link>
 
         {/* Desktop Navigation */}
-        <div className="hidden items-center gap-3 md:flex md:gap-4">
-          <Link href="/" className="text-sm text-text hover:text-primary dark:text-text-dark-light dark:hover:text-primary-dark-mode transition-colors sm:text-base">
-            {t('nav.home')}
-          </Link>
-          <Link href="/about" className="text-sm text-text hover:text-primary dark:text-text-dark-light dark:hover:text-primary-dark-mode transition-colors sm:text-base">
-            {t('nav.about')}
-          </Link>
-
+        <div className="hidden items-center gap-4 md:flex">
           {session ? (
             <>
               <NotificationBell />
-              <Link href={`/${session.user.role.toLowerCase()}/dashboard`}>
+              <Link href="/vital/profile/create">
                 <Button variant="ghost" size="sm" className="text-sm">
-                  {t('nav.dashboard')}
+                  {t('nav.profile')}
                 </Button>
               </Link>
               <Button
@@ -89,7 +82,7 @@ export function Navbar() {
             </>
           )}
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-2">
             <LanguageToggle />
             <ThemeToggle />
           </div>
@@ -128,7 +121,7 @@ export function Navbar() {
             aria-hidden="true"
           />
           <div className="fixed inset-y-0 right-0 z-50 w-full max-w-sm bg-background dark:bg-background-dark shadow-lg md:hidden">
-            <div className="flex h-16 items-center justify-between border-b border-border dark:border-border-dark px-4">
+            <div className="flex h-16 items-center justify-between border-b border-border px-4">
               <span className="text-lg font-bold text-primary dark:text-primary-dark-mode">
                 Menu
               </span>
@@ -143,56 +136,40 @@ export function Navbar() {
               </Button>
             </div>
             <div className="flex h-[calc(100vh-4rem)] flex-col overflow-y-auto px-4 py-6">
-              <div className="space-y-1">
-                <Link
-                  href="/"
-                  className="block rounded-lg px-4 py-3 text-base font-medium text-text hover:bg-background-secondary dark:text-text-dark dark:hover:bg-background-dark-secondary transition-colors"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  {t('nav.home')}
-                </Link>
-                <Link
-                  href="/about"
-                  className="block rounded-lg px-4 py-3 text-base font-medium text-text hover:bg-background-secondary dark:text-text-dark dark:hover:bg-background-dark-secondary transition-colors"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  {t('nav.about')}
-                </Link>
-                {session ? (
-                  <>
-                    <Link
-                      href={`/${session.user.role.toLowerCase()}/dashboard`}
-                      className="block rounded-lg px-4 py-3 text-base font-medium text-text hover:bg-background-secondary dark:text-text-dark dark:hover:bg-background-dark-secondary transition-colors"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      {t('nav.dashboard')}
-                    </Link>
-                    <button
-                      onClick={handleLogout}
-                      className="w-full rounded-lg px-4 py-3 text-left text-base font-medium text-text hover:bg-background-secondary dark:text-text-dark dark:hover:bg-background-dark-secondary transition-colors"
-                    >
-                      {t('nav.logout')}
-                    </button>
-                  </>
-                ) : (
-                  <div className="space-y-2 pt-2">
-                    <Link
-                      href="/auth/login"
-                      className="block w-full rounded-lg px-4 py-3 text-center text-base font-medium text-text hover:bg-background-secondary dark:text-text-dark dark:hover:bg-background-dark-secondary transition-colors"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      {t('nav.login')}
-                    </Link>
-                    <Link
-                      href="/auth/register"
-                      className="block w-full rounded-lg bg-primary px-4 py-3 text-center text-base font-medium text-white hover:bg-primary-dark dark:bg-primary-dark-mode dark:hover:bg-primary-dark-mode-hover transition-colors"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      {t('nav.register')}
-                    </Link>
-                  </div>
-                )}
-              </div>
+              {session ? (
+                <div className="space-y-1">
+                  <Link
+                    href="/vital/profile/create"
+                    className="block rounded-lg px-4 py-3 text-base font-medium text-text hover:bg-background-secondary dark:text-text-dark dark:hover:bg-background-dark-secondary transition-colors"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    {t('nav.profile')}
+                  </Link>
+                  <button
+                    onClick={handleLogout}
+                    className="w-full rounded-lg px-4 py-3 text-left text-base font-medium text-text hover:bg-background-secondary dark:text-text-dark dark:hover:bg-background-dark-secondary transition-colors"
+                  >
+                    {t('nav.logout')}
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Link
+                    href="/auth/login"
+                    className="block w-full rounded-lg px-4 py-3 text-center text-base font-medium text-text hover:bg-background-secondary dark:text-text-dark dark:hover:bg-background-dark-secondary transition-colors"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    {t('nav.login')}
+                  </Link>
+                  <Link
+                    href="/auth/register"
+                    className="block w-full rounded-lg bg-primary px-4 py-3 text-center text-base font-medium text-white hover:bg-primary-dark dark:bg-primary-dark-mode dark:hover:bg-primary-dark-mode-hover transition-colors"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    {t('nav.register')}
+                  </Link>
+                </div>
+              )}
             </div>
           </div>
         </>
@@ -200,4 +177,3 @@ export function Navbar() {
     </nav>
   );
 }
-

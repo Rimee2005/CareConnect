@@ -121,13 +121,13 @@ export default function CreateVitalProfilePage() {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-background dark:bg-background-dark transition-colors">
       <Navbar />
       <div className="container mx-auto px-4 py-8">
         <Card className="mx-auto max-w-2xl">
           <CardHeader>
-            <CardTitle>Create Your Vital Profile</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-text dark:text-text-dark transition-colors">Create Your Vital Profile</CardTitle>
+            <CardDescription className="text-text-light dark:text-text-dark-light transition-colors">
               Tell us about yourself so we can connect you with the right Guardians
             </CardDescription>
           </CardHeader>
@@ -145,9 +145,9 @@ export default function CreateVitalProfilePage() {
                   )}
                   <label
                     htmlFor="photo"
-                    className="flex cursor-pointer items-center gap-2 rounded-md border px-4 py-2 hover:bg-background-secondary"
+                    className="flex cursor-pointer items-center gap-2 rounded-md border border-gray-300 px-4 py-2 text-text hover:bg-background-secondary dark:border-border-dark dark:text-text-dark dark:hover:bg-background-dark-secondary transition-colors"
                   >
-                    <Upload className="h-4 w-4" />
+                    <Upload className="h-4 w-4 text-text dark:text-text-dark transition-colors" />
                     <span>Upload Photo</span>
                     <input
                       id="photo"
@@ -163,7 +163,7 @@ export default function CreateVitalProfilePage() {
               <div className="space-y-2">
                 <Label htmlFor="name">Name *</Label>
                 <Input id="name" {...register('name')} />
-                {errors.name && <p className="text-sm text-error">{errors.name.message}</p>}
+                {errors.name && <p className="text-sm font-medium text-error dark:text-error transition-colors">{errors.name.message}</p>}
               </div>
 
               <div className="grid gap-4 md:grid-cols-2">
@@ -174,7 +174,7 @@ export default function CreateVitalProfilePage() {
                     type="number"
                     {...register('age', { valueAsNumber: true })}
                   />
-                  {errors.age && <p className="text-sm text-error">{errors.age.message}</p>}
+                  {errors.age && <p className="text-sm font-medium text-error dark:text-error transition-colors">{errors.age.message}</p>}
                 </div>
 
                 <div className="space-y-2">
@@ -186,7 +186,7 @@ export default function CreateVitalProfilePage() {
                     <option value="Other">Other</option>
                     <option value="Prefer not to say">Prefer not to say</option>
                   </Select>
-                  {errors.gender && <p className="text-sm text-error">{errors.gender.message}</p>}
+                  {errors.gender && <p className="text-sm font-medium text-error dark:text-error transition-colors">{errors.gender.message}</p>}
                 </div>
               </div>
 
@@ -199,7 +199,7 @@ export default function CreateVitalProfilePage() {
                   placeholder="Describe your health needs and requirements..."
                 />
                 {errors.healthNeeds && (
-                  <p className="text-sm text-error">{errors.healthNeeds.message}</p>
+                  <p className="text-sm font-medium text-error dark:text-error transition-colors">{errors.healthNeeds.message}</p>
                 )}
               </div>
 
@@ -216,7 +216,7 @@ export default function CreateVitalProfilePage() {
                 <div className="space-y-2">
                   <Label htmlFor="city">City *</Label>
                   <Input id="city" {...register('city')} />
-                  {errors.city && <p className="text-sm text-error">{errors.city.message}</p>}
+                  {errors.city && <p className="text-sm font-medium text-error dark:text-error transition-colors">{errors.city.message}</p>}
                 </div>
 
                 <div className="space-y-2">
@@ -228,12 +228,12 @@ export default function CreateVitalProfilePage() {
                     <option value="Both">Both</option>
                   </Select>
                   {errors.contactPreference && (
-                    <p className="text-sm text-error">{errors.contactPreference.message}</p>
+                    <p className="text-sm font-medium text-error dark:text-error transition-colors">{errors.contactPreference.message}</p>
                   )}
                 </div>
               </div>
 
-              {error && <p className="text-sm text-error">{error}</p>}
+              {error && <p className="text-sm font-medium text-error dark:text-error transition-colors">{error}</p>}
 
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? t('common.loading') : 'Create Profile'}

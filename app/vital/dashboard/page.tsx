@@ -92,13 +92,13 @@ export default function VitalDashboardPage() {
   return (
     <div className="min-h-screen">
       <Navbar />
-      <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-text">Welcome, {profile.name}!</h1>
-          <p className="text-text-muted">Your care dashboard</p>
+      <div className="container mx-auto px-4 py-6 sm:px-6 sm:py-8">
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-2xl font-bold text-text sm:text-3xl dark:text-text-dark transition-colors">Welcome, {profile.name}!</h1>
+          <p className="text-sm text-text-muted sm:text-base dark:text-text-dark-light transition-colors">Your care dashboard</p>
         </div>
 
-        <div className="mb-8 grid gap-6 md:grid-cols-2">
+        <div className="mb-6 grid gap-4 sm:gap-6 sm:mb-8 md:grid-cols-2">
           <Card>
             <CardHeader>
               <CardTitle>My Profile</CardTitle>
@@ -121,7 +121,7 @@ export default function VitalDashboardPage() {
                 )}
                 <div>
                   <p className="font-semibold">{profile.name}</p>
-                  <p className="text-sm text-text-muted">Age: {profile.age}</p>
+                  <p className="text-sm text-text-muted dark:text-text-dark-muted transition-colors">Age: {profile.age}</p>
                 </div>
               </div>
               <Button variant="outline" className="mt-4 w-full">
@@ -155,7 +155,7 @@ export default function VitalDashboardPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="mb-4 text-text-muted">{t('feature.sos.comingSoon')}</p>
+              <p className="mb-4 text-text-muted dark:text-text-dark-muted transition-colors">{t('feature.sos.comingSoon')}</p>
               <Button variant="outline" disabled>
                 Coming Soon
               </Button>

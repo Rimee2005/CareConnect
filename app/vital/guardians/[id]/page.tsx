@@ -173,16 +173,16 @@ export default function GuardianDetailPage() {
   return (
     <div className="min-h-screen">
       <Navbar />
-      <div className="container mx-auto px-4 py-8">
-        <Button variant="ghost" onClick={() => router.back()} className="mb-4">
+      <div className="container mx-auto px-4 py-6 sm:px-6 sm:py-8">
+        <Button variant="ghost" onClick={() => router.back()} className="mb-4 text-sm sm:text-base">
           ← Back
         </Button>
 
-        <div className="grid gap-8 lg:grid-cols-3">
+        <div className="grid gap-6 sm:gap-8 lg:grid-cols-3">
           <div className="lg:col-span-2">
-            <Card className="mb-8">
+            <Card className="mb-6 sm:mb-8">
               <CardContent className="p-0">
-                <div className="relative h-64 bg-primary/10">
+                <div className="relative h-48 bg-primary/10 dark:bg-primary-dark-mode/20 sm:h-64 transition-colors">
                   {guardian.profilePhoto ? (
                     <img
                       src={guardian.profilePhoto}
@@ -191,7 +191,7 @@ export default function GuardianDetailPage() {
                     />
                   ) : (
                     <div className="flex h-full items-center justify-center">
-                      <span className="text-6xl text-primary">
+                      <span className="text-4xl text-primary dark:text-primary-dark-mode sm:text-6xl transition-colors">
                         {guardian.name.charAt(0).toUpperCase()}
                       </span>
                     </div>
@@ -199,15 +199,15 @@ export default function GuardianDetailPage() {
                   {guardian.isVerified && (
                     <Badge
                       variant="success"
-                      className="absolute right-4 top-4 flex items-center gap-1"
+                      className="absolute right-2 top-2 flex items-center gap-1 text-xs sm:right-4 sm:top-4 sm:text-sm"
                     >
-                      <Shield className="h-4 w-4" />
+                      <Shield className="h-3 w-3 sm:h-4 sm:w-4" />
                       Verified Guardian
                     </Badge>
                   )}
                 </div>
-                <div className="p-6">
-                  <h1 className="mb-2 text-3xl font-bold">{guardian.name}</h1>
+                <div className="p-4 sm:p-6">
+                  <h1 className="mb-2 text-2xl font-bold text-text dark:text-text-dark sm:text-3xl transition-colors">{guardian.name}</h1>
                   <div className="mb-4 flex flex-wrap gap-2">
                     {guardian.specialization.map((spec, idx) => (
                       <Badge key={idx} variant="default">
@@ -217,27 +217,27 @@ export default function GuardianDetailPage() {
                   </div>
                   <div className="grid gap-4 md:grid-cols-2">
                     <div>
-                      <p className="text-sm text-text-muted">Experience</p>
-                      <p className="text-lg font-semibold">{guardian.experience} years</p>
+                      <p className="text-xs text-text-muted dark:text-text-dark-light sm:text-sm transition-colors">Experience</p>
+                      <p className="text-base font-semibold text-text dark:text-text-dark sm:text-lg transition-colors">{guardian.experience} years</p>
                     </div>
                     <div>
-                      <p className="text-sm text-text-muted">Service Radius</p>
-                      <p className="text-lg font-semibold">{guardian.serviceRadius} km</p>
+                      <p className="text-xs text-text-muted dark:text-text-dark-light sm:text-sm transition-colors">Service Radius</p>
+                      <p className="text-base font-semibold text-text dark:text-text-dark sm:text-lg transition-colors">{guardian.serviceRadius} km</p>
                     </div>
                     {guardian.location?.city && (
                       <div>
-                        <p className="text-sm text-text-muted">Location</p>
-                        <p className="text-lg font-semibold flex items-center gap-1">
-                          <MapPin className="h-4 w-4" />
+                        <p className="text-xs text-text-muted dark:text-text-dark-light sm:text-sm transition-colors">Location</p>
+                        <p className="text-base font-semibold text-text dark:text-text-dark sm:text-lg flex items-center gap-1 transition-colors">
+                          <MapPin className="h-3 w-3 sm:h-4 sm:w-4" />
                           {guardian.location.city}
                         </p>
                       </div>
                     )}
                     {guardian.averageRating && (
                       <div>
-                        <p className="text-sm text-text-muted">Rating</p>
-                        <p className="text-lg font-semibold flex items-center gap-1">
-                          <Star className="h-4 w-4 fill-warning text-warning" />
+                        <p className="text-xs text-text-muted dark:text-text-dark-light sm:text-sm transition-colors">Rating</p>
+                        <p className="text-base font-semibold text-text dark:text-text-dark sm:text-lg flex items-center gap-1 transition-colors">
+                          <Star className="h-3 w-3 fill-warning text-warning sm:h-4 sm:w-4" />
                           {guardian.averageRating.toFixed(1)} ({guardian.reviewCount || 0} reviews)
                         </p>
                       </div>
@@ -278,31 +278,31 @@ export default function GuardianDetailPage() {
             </Card>
 
             {reviews.length > 0 && (
-              <Card className="mt-8">
-                <CardHeader>
-                  <CardTitle>Reviews</CardTitle>
+              <Card className="mt-6 sm:mt-8">
+                <CardHeader className="px-4 sm:px-6">
+                  <CardTitle className="text-lg sm:text-xl">Reviews</CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="px-4 sm:px-6">
                   <div className="space-y-4">
                     {reviews.map((review) => (
-                      <div key={review._id} className="border-b pb-4 last:border-0">
+                      <div key={review._id} className="border-b border-border dark:border-border-dark pb-4 last:border-0 transition-colors">
                         <div className="mb-2 flex items-center gap-2">
                           <div className="flex">
                             {[...Array(5)].map((_, i) => (
                               <Star
                                 key={i}
-                                className={`h-4 w-4 ${
+                                className={`h-3 w-3 sm:h-4 sm:w-4 ${
                                   i < review.rating
                                     ? 'fill-warning text-warning'
-                                    : 'text-gray-300'
+                                    : 'text-gray-300 dark:text-gray-600'
                                 }`}
                               />
                             ))}
                           </div>
-                          <span className="font-semibold">{review.vitalId.name}</span>
+                          <span className="text-sm font-semibold text-text dark:text-text-dark sm:text-base transition-colors">{review.vitalId.name}</span>
                         </div>
-                        {review.comment && <p className="text-text">{review.comment}</p>}
-                        <p className="mt-2 text-xs text-text-muted">
+                        {review.comment && <p className="text-sm text-text dark:text-text-dark sm:text-base transition-colors">{review.comment}</p>}
+                        <p className="mt-2 text-xs text-text-muted dark:text-text-dark-light transition-colors">
                           {new Date(review.createdAt).toLocaleDateString()}
                         </p>
                       </div>
@@ -315,26 +315,27 @@ export default function GuardianDetailPage() {
 
           <div>
             <Card className="sticky top-4">
-              <CardHeader>
-                <CardTitle>{t('vital.book')}</CardTitle>
+              <CardHeader className="px-4 sm:px-6">
+                <CardTitle className="text-lg sm:text-xl">{t('vital.book')}</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-4 px-4 sm:px-6">
                 <div>
-                  <Label htmlFor="notes">Additional Notes (Optional)</Label>
+                  <Label htmlFor="notes" className="text-sm sm:text-base">Additional Notes (Optional)</Label>
                   <Textarea
                     id="notes"
                     value={bookingNotes}
                     onChange={(e) => setBookingNotes(e.target.value)}
                     rows={4}
                     placeholder="Any special requirements or notes..."
+                    className="text-sm sm:text-base"
                   />
                 </div>
-                <Button onClick={handleBook} className="w-full" size="lg">
+                <Button onClick={handleBook} className="w-full text-sm sm:text-base" size="lg">
                   {t('vital.book')}
                 </Button>
                 <Button 
                   variant="outline" 
-                  className="w-full" 
+                  className="w-full text-sm sm:text-base" 
                   size="lg"
                   onClick={handleChat}
                 >

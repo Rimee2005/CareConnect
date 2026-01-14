@@ -11,14 +11,28 @@
     --ring: 20 184 166;
   }
 
+  .dark {
+    --background: 26 31 46;
+    --foreground: 232 237 243;
+    --border: 45 55 72;
+    --input: 45 55 72;
+    --ring: 45 221 191;
+  }
+
   * {
     @apply border-border;
   }
 
   body {
-    @apply bg-background text-text;
+    @apply bg-background text-text dark:bg-background-dark dark:text-text-dark;
     font-family: system-ui, -apple-system, sans-serif;
     line-height: 1.6;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  /* Dark mode select options */
+  select option {
+    @apply bg-white text-text dark:bg-background-dark-secondary dark:text-text-dark;
   }
 }
 

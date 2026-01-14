@@ -80,21 +80,21 @@ export default function GuardiansPage() {
   return (
     <div className="min-h-screen">
       <Navbar />
-      <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="mb-4 text-3xl font-bold text-text">{t('vital.browse')}</h1>
+      <div className="container mx-auto px-4 py-6 sm:px-6 sm:py-8">
+        <div className="mb-6 sm:mb-8">
+          <h1 className="mb-3 text-2xl font-bold text-text sm:text-3xl sm:mb-4 dark:text-text-dark transition-colors">{t('vital.browse')}</h1>
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-text-muted" />
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted sm:h-5 sm:w-5" />
             <Input
               placeholder="Search by name or specialization..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
+              className="pl-9 text-sm sm:pl-10 sm:text-base"
             />
           </div>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {filteredGuardians.map((guardian) => (
             <Card key={guardian._id} className="overflow-hidden">
               <CardContent className="p-0">
@@ -122,8 +122,8 @@ export default function GuardiansPage() {
                     </Badge>
                   )}
                 </div>
-                <div className="p-4">
-                  <h3 className="mb-2 text-xl font-semibold">{guardian.name}</h3>
+                <div className="p-3 sm:p-4">
+                  <h3 className="mb-2 text-lg font-semibold text-text dark:text-text-dark sm:text-xl transition-colors">{guardian.name}</h3>
                   <div className="mb-2 flex flex-wrap gap-1">
                     {guardian.specialization.slice(0, 2).map((spec, idx) => (
                       <Badge key={idx} variant="outline" className="text-xs">
@@ -136,24 +136,24 @@ export default function GuardiansPage() {
                       </Badge>
                     )}
                   </div>
-                  <div className="mb-2 flex items-center gap-4 text-sm text-text-muted">
+                  <div className="mb-2 flex flex-wrap items-center gap-3 text-xs text-text-muted dark:text-text-dark-light sm:text-sm sm:gap-4 transition-colors">
                     <span>{guardian.experience} years experience</span>
                     {guardian.averageRating && (
                       <span className="flex items-center gap-1">
-                        <Star className="h-4 w-4 fill-warning text-warning" />
+                        <Star className="h-3 w-3 fill-warning text-warning sm:h-4 sm:w-4" />
                         {guardian.averageRating.toFixed(1)}
                       </span>
                     )}
                   </div>
                   {guardian.location?.city && (
-                    <div className="mb-4 flex items-center gap-1 text-sm text-text-muted">
-                      <MapPin className="h-4 w-4" />
+                    <div className="mb-3 flex items-center gap-1 text-xs text-text-muted dark:text-text-dark-light sm:mb-4 sm:text-sm transition-colors">
+                      <MapPin className="h-3 w-3 sm:h-4 sm:w-4" />
                       {guardian.location.city}
                     </div>
                   )}
                   <div className="flex gap-2">
                     <Link href={`/vital/guardians/${guardian._id}`} className="flex-1">
-                      <Button className="w-full" size="sm">
+                      <Button className="w-full text-xs sm:text-sm" size="sm">
                         View Details
                       </Button>
                     </Link>

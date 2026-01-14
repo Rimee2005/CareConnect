@@ -52,12 +52,16 @@ export function Navbar() {
 
         {/* Desktop Navigation */}
         <div className="hidden items-center gap-3 md:flex md:gap-4">
-          <Link href="/" className="text-sm text-text hover:text-primary dark:text-text-dark-light dark:hover:text-primary-dark-mode transition-colors sm:text-base">
-            {t('nav.home')}
-          </Link>
-          <Link href="/about" className="text-sm text-text hover:text-primary dark:text-text-dark-light dark:hover:text-primary-dark-mode transition-colors sm:text-base">
-            {t('nav.about')}
-          </Link>
+          {!session && (
+            <>
+              <Link href="/" className="text-sm text-text hover:text-primary dark:text-text-dark-light dark:hover:text-primary-dark-mode transition-colors sm:text-base">
+                {t('nav.home')}
+              </Link>
+              <Link href="/about" className="text-sm text-text hover:text-primary dark:text-text-dark-light dark:hover:text-primary-dark-mode transition-colors sm:text-base">
+                {t('nav.about')}
+              </Link>
+            </>
+          )}
 
           {session ? (
             <>
@@ -144,20 +148,24 @@ export function Navbar() {
             </div>
             <div className="flex h-[calc(100vh-4rem)] flex-col overflow-y-auto px-4 py-6">
               <div className="space-y-1">
-                <Link
-                  href="/"
-                  className="block rounded-lg px-4 py-3 text-base font-medium text-text hover:bg-background-secondary dark:text-text-dark dark:hover:bg-background-dark-secondary transition-colors"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  {t('nav.home')}
-                </Link>
-                <Link
-                  href="/about"
-                  className="block rounded-lg px-4 py-3 text-base font-medium text-text hover:bg-background-secondary dark:text-text-dark dark:hover:bg-background-dark-secondary transition-colors"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  {t('nav.about')}
-                </Link>
+                {!session && (
+                  <>
+                    <Link
+                      href="/"
+                      className="block rounded-lg px-4 py-3 text-base font-medium text-text hover:bg-background-secondary dark:text-text-dark dark:hover:bg-background-dark-secondary transition-colors"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      {t('nav.home')}
+                    </Link>
+                    <Link
+                      href="/about"
+                      className="block rounded-lg px-4 py-3 text-base font-medium text-text hover:bg-background-secondary dark:text-text-dark dark:hover:bg-background-dark-secondary transition-colors"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      {t('nav.about')}
+                    </Link>
+                  </>
+                )}
                 {session ? (
                   <>
                     <Link

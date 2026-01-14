@@ -1,33 +1,55 @@
 import { NextResponse } from 'next/server';
 import { requireVital } from '@/lib/rbac';
 import connectDB from '@/lib/db';
-import GuardianProfile from '@/models/GuardianProfile';
-import Review from '@/models/Review';
+import { matchGuardians } from '@/lib/ai-matching';
+import { calculateGuardianRating } from '@/lib/ratings';
+import VitalProfile from '@/models/VitalProfile';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const session = await requireVital();
     await connectDB();
 
-    const guardians = await GuardianProfile.find({}).lean();
+    // Get Vital profile for AI matching input
+    const vitalProfile = await VitalProfile.findOne({
+      userId: session.user.id,
+    }).lean();
 
-    // Calculate average ratings
-    const guardiansWithRatings = await Promise.all(
-      guardians.map(async (guardian) => {
-        const reviews = await Review.find({ guardianId: guardian._id }).lean();
-        const ratings = reviews.map((r) => r.rating);
-        const averageRating =
-          ratings.length > 0 ? ratings.reduce((a, b) => a + b, 0) / ratings.length : undefined;
+    if (!vitalProfile) {
+      return NextResponse.json({ error: 'Vital profile not found' }, { status: 404 });
+    }
 
+    // Prepare matching input
+    const matchingInput = {
+      vitalLocation: vitalProfile.location?.coordinates,
+      vitalHealthNeeds: vitalProfile.healthNeeds,
+      vitalHealthTags: vitalProfile.healthTags,
+      vitalCity: vitalProfile.location?.city,
+    };
+
+    // Get AI-matched guardians
+    const matchedGuardians = await matchGuardians(matchingInput);
+
+    // Enrich with rating stats
+    const enrichedGuardians = await Promise.all(
+      matchedGuardians.map(async ({ guardian, matchScore }) => {
+        const ratingStats = await calculateGuardianRating(guardian._id.toString());
         return {
           ...guardian,
-          averageRating,
-          reviewCount: reviews.length,
+          _id: guardian._id.toString(),
+          averageRating: ratingStats.averageRating,
+          reviewCount: ratingStats.totalReviews,
+          aiMatch: {
+            score: matchScore.score,
+            explanation: matchScore.explanation,
+            reasons: matchScore.reasons,
+            isRecommended: matchScore.score > 50, // Threshold for "recommended"
+          },
         };
       })
     );
 
-    return NextResponse.json(guardiansWithRatings);
+    return NextResponse.json(enrichedGuardians);
   } catch (error: any) {
     if (error.message === 'Unauthorized' || error.message.includes('Forbidden')) {
       return NextResponse.json({ error: error.message }, { status: 401 });

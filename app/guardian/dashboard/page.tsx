@@ -9,7 +9,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useTranslation } from '@/lib/i18n';
-import { Plus, Calendar, User } from 'lucide-react';
+import { Plus, Calendar, User, Star } from 'lucide-react';
+import { StarRating } from '@/components/StarRating';
 
 interface GuardianProfile {
   _id: string;
@@ -30,12 +31,26 @@ interface Booking {
   createdAt: string;
 }
 
+interface Review {
+  _id: string;
+  rating: number;
+  reviewText?: string;
+  comment?: string;
+  vitalId: {
+    _id: string;
+    name: string;
+    profilePhoto?: string;
+  };
+  createdAt: string;
+}
+
 export default function GuardianDashboardPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const { t } = useTranslation();
   const [profile, setProfile] = useState<GuardianProfile | null>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -47,6 +62,7 @@ export default function GuardianDashboardPage() {
     if (status === 'authenticated' && session?.user?.role === 'GUARDIAN') {
       fetchProfile();
       fetchBookings();
+      fetchReviews();
     }
   }, [session, status, router]);
 
@@ -78,7 +94,19 @@ export default function GuardianDashboardPage() {
     }
   };
 
-  const handleBookingAction = async (bookingId: string, action: 'accept' | 'reject') => {
+  const fetchReviews = async () => {
+    try {
+      const res = await fetch('/api/guardian/reviews');
+      if (res.ok) {
+        const data = await res.json();
+        setReviews(data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch reviews:', error);
+    }
+  };
+
+  const handleBookingAction = async (bookingId: string, action: 'accept' | 'reject' | 'start' | 'complete') => {
     try {
       const res = await fetch(`/api/guardian/bookings/${bookingId}`, {
         method: 'PATCH',
@@ -88,9 +116,13 @@ export default function GuardianDashboardPage() {
 
       if (res.ok) {
         fetchBookings();
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Failed to update booking');
       }
     } catch (error) {
       console.error('Failed to update booking:', error);
+      alert('An error occurred');
     }
   };
 
@@ -143,6 +175,26 @@ export default function GuardianDashboardPage() {
     ONGOING: t('guardian.status.ongoing'),
     COMPLETED: t('guardian.status.completed'),
     REJECTED: 'Rejected',
+  };
+
+  const handleStatusChange = async (bookingId: string, action: 'accept' | 'reject' | 'start' | 'complete') => {
+    try {
+      const res = await fetch(`/api/guardian/bookings/${bookingId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action }),
+      });
+
+      if (res.ok) {
+        fetchBookings();
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Failed to update booking');
+      }
+    } catch (error) {
+      console.error('Failed to update booking:', error);
+      alert('An error occurred');
+    }
   };
 
   return (
@@ -260,6 +312,24 @@ export default function GuardianDashboardPage() {
                           </Button>
                         </div>
                       )}
+                      {booking.status === 'ACCEPTED' && (
+                        <Button
+                          size="sm"
+                          onClick={() => handleBookingAction(booking._id, 'start')}
+                          className="text-xs sm:text-sm"
+                        >
+                          Start Service
+                        </Button>
+                      )}
+                      {booking.status === 'ONGOING' && (
+                        <Button
+                          size="sm"
+                          onClick={() => handleBookingAction(booking._id, 'complete')}
+                          className="text-xs sm:text-sm"
+                        >
+                          Mark Complete
+                        </Button>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -267,6 +337,87 @@ export default function GuardianDashboardPage() {
             )}
           </CardContent>
         </Card>
+
+        {/* Reviews Section - Read-only for Guardian */}
+        {reviews.length > 0 && (
+          <Card className="mt-6 sm:mt-8">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Star className="h-5 w-5" />
+                Reviews from Vitals
+              </CardTitle>
+              <CardDescription>
+                Reviews left by Vitals who completed services with you (read-only)
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {reviews.map((review) => (
+                  <div
+                    key={review._id}
+                    className="rounded-lg border border-border dark:border-border-dark p-4 transition-colors"
+                  >
+                    <div className="mb-3 flex items-center gap-3">
+                      {review.vitalId.profilePhoto ? (
+                        <img
+                          src={review.vitalId.profilePhoto}
+                          alt={review.vitalId.name}
+                          className="h-10 w-10 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+                          <span className="text-sm font-semibold text-primary">
+                            {review.vitalId.name.charAt(0).toUpperCase()}
+                          </span>
+                        </div>
+                      )}
+                      <div className="flex-1">
+                        <p className="font-semibold text-text dark:text-text-dark">
+                          {review.vitalId.name}
+                        </p>
+                        <p className="text-xs text-text-muted dark:text-text-dark-light">
+                          {new Date(review.createdAt).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="mb-2">
+                      <StarRating
+                        rating={review.rating}
+                        readonly
+                        size="md"
+                      />
+                    </div>
+                    {(review.reviewText || review.comment) && (
+                      <p className="text-sm text-text dark:text-text-dark leading-relaxed">
+                        "{review.reviewText || review.comment}"
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {reviews.length === 0 && (
+          <Card className="mt-6 sm:mt-8">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Star className="h-5 w-5" />
+                Reviews
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="py-4 text-center text-text-muted dark:text-text-dark-light">
+                No reviews yet. Reviews will appear here once Vitals complete services and leave feedback.
+              </p>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );

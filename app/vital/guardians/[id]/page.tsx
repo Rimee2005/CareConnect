@@ -11,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useTranslation } from '@/lib/i18n';
 import { Star, MapPin, Shield, Calendar, Clock } from 'lucide-react';
+import { StarRating } from '@/components/StarRating';
 import { Toast } from '@/components/ui/toast';
 
 interface Guardian {
@@ -233,13 +234,24 @@ export default function GuardianDetailPage() {
                         </p>
                       </div>
                     )}
-                    {guardian.averageRating && (
+                    {guardian.averageRating ? (
                       <div>
                         <p className="text-xs text-text-muted dark:text-text-dark-light sm:text-sm transition-colors">Rating</p>
-                        <p className="text-base font-semibold text-text dark:text-text-dark sm:text-lg flex items-center gap-1 transition-colors">
-                          <Star className="h-3 w-3 fill-warning text-warning sm:h-4 sm:w-4" />
-                          {guardian.averageRating.toFixed(1)} ({guardian.reviewCount || 0} reviews)
-                        </p>
+                        <div className="flex items-center gap-2">
+                          <StarRating
+                            rating={guardian.averageRating}
+                            readonly
+                            size="md"
+                          />
+                          <p className="text-base font-semibold text-text dark:text-text-dark sm:text-lg transition-colors">
+                            {guardian.averageRating.toFixed(1)} ({guardian.reviewCount || 0} reviews)
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div>
+                        <p className="text-xs text-text-muted dark:text-text-dark-light sm:text-sm transition-colors">Rating</p>
+                        <Badge variant="outline">New Guardian</Badge>
                       </div>
                     )}
                   </div>
@@ -287,21 +299,18 @@ export default function GuardianDetailPage() {
                     {reviews.map((review) => (
                       <div key={review._id} className="border-b border-border dark:border-border-dark pb-4 last:border-0 transition-colors">
                         <div className="mb-2 flex items-center gap-2">
-                          <div className="flex">
-                            {[...Array(5)].map((_, i) => (
-                              <Star
-                                key={i}
-                                className={`h-3 w-3 sm:h-4 sm:w-4 ${
-                                  i < review.rating
-                                    ? 'fill-warning text-warning'
-                                    : 'text-gray-300 dark:text-gray-600'
-                                }`}
-                              />
-                            ))}
-                          </div>
+                          <StarRating
+                            rating={review.rating}
+                            readonly
+                            size="sm"
+                          />
                           <span className="text-sm font-semibold text-text dark:text-text-dark sm:text-base transition-colors">{review.vitalId.name}</span>
                         </div>
-                        {review.comment && <p className="text-sm text-text dark:text-text-dark sm:text-base transition-colors">{review.comment}</p>}
+                        {(review.reviewText || review.comment) && (
+                          <p className="text-sm text-text dark:text-text-dark sm:text-base transition-colors">
+                            {review.reviewText || review.comment}
+                          </p>
+                        )}
                         <p className="mt-2 text-xs text-text-muted dark:text-text-dark-light transition-colors">
                           {new Date(review.createdAt).toLocaleDateString()}
                         </p>

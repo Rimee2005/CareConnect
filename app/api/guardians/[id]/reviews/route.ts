@@ -16,7 +16,14 @@ export async function GET(
       .sort({ createdAt: -1 })
       .lean();
 
-    return NextResponse.json(reviews);
+    // Format reviews for frontend
+    const formattedReviews = reviews.map((review) => ({
+      ...review,
+      _id: review._id.toString(),
+      reviewText: review.reviewText || review.comment, // Support both field names
+    }));
+
+    return NextResponse.json(formattedReviews);
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

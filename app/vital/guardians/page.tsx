@@ -13,6 +13,8 @@ import { Select } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { useTranslation } from '@/lib/i18n';
 import { Search, Star, MapPin, Shield, Heart, X, ArrowLeft, SlidersHorizontal, Calendar, Clock } from 'lucide-react';
+import { AIBadge } from '@/components/AIBadge';
+import { StarRating } from '@/components/StarRating';
 
 interface Guardian {
   _id: string;
@@ -36,6 +38,12 @@ interface Guardian {
   };
   averageRating?: number;
   reviewCount?: number;
+  aiMatch?: {
+    score: number;
+    explanation: string;
+    reasons: string[];
+    isRecommended: boolean;
+  };
 }
 
 export default function GuardiansPage() {
@@ -640,15 +648,24 @@ export default function GuardiansPage() {
                           </span>
                         </div>
                       )}
-                      {guardian.isVerified && (
-                        <Badge
-                          variant="success"
-                          className="absolute left-2 top-2 flex items-center gap-1"
-                        >
-                          <Shield className="h-3 w-3" />
-                          Verified
-                        </Badge>
-                      )}
+                      <div className="absolute right-2 top-2 flex flex-col gap-2 items-end">
+                        {guardian.aiMatch?.isRecommended && (
+                          <AIBadge
+                            explanation={guardian.aiMatch.explanation}
+                            reasons={guardian.aiMatch.reasons}
+                            score={guardian.aiMatch.score}
+                          />
+                        )}
+                        {guardian.isVerified && (
+                          <Badge
+                            variant="success"
+                            className="flex items-center gap-1"
+                          >
+                            <Shield className="h-3 w-3" />
+                            Verified
+                          </Badge>
+                        )}
+                      </div>
                       <Button
                         variant="ghost"
                         size="icon"
@@ -682,11 +699,21 @@ export default function GuardiansPage() {
                       </div>
                       <div className="mb-2 flex flex-wrap items-center gap-3 text-xs text-text-muted dark:text-text-dark-light sm:text-sm sm:gap-4 transition-colors">
                         <span>{guardian.experience} years experience</span>
-                        {guardian.averageRating && (
-                          <span className="flex items-center gap-1">
-                            <Star className="h-3 w-3 fill-warning text-warning sm:h-4 sm:w-4" />
-                            {guardian.averageRating.toFixed(1)}
-                          </span>
+                        {guardian.averageRating ? (
+                          <div className="flex items-center gap-1">
+                            <StarRating
+                              rating={guardian.averageRating}
+                              readonly
+                              size="sm"
+                            />
+                            <span className="text-xs">
+                              {guardian.averageRating.toFixed(1)} ({guardian.reviewCount || 0})
+                            </span>
+                          </div>
+                        ) : (
+                          <Badge variant="outline" className="text-xs">
+                            New Guardian
+                          </Badge>
                         )}
                       </div>
                       {guardian.location?.city && (

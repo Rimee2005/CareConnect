@@ -9,25 +9,49 @@ import { Heart, Shield, Clock, Users, CheckCircle, Lock, Headphones, Star, Arrow
 import { featureFlags } from '@/lib/feature-flags';
 import { motion } from 'framer-motion';
 
-// Animation variants
+// Enhanced Animation variants
 const fadeInUp = {
-  initial: { opacity: 0, y: 20 },
+  initial: { opacity: 0, y: 30 },
   animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.5 }
+  transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] }
 };
 
 const staggerContainer = {
   animate: {
     transition: {
-      staggerChildren: 0.1
+      staggerChildren: 0.15,
+      delayChildren: 0.1
     }
   }
 };
 
 const scaleIn = {
-  initial: { opacity: 0, scale: 0.9 },
+  initial: { opacity: 0, scale: 0.85 },
   animate: { opacity: 1, scale: 1 },
-  transition: { duration: 0.4 }
+  transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] }
+};
+
+const slideInLeft = {
+  initial: { opacity: 0, x: -30 },
+  animate: { opacity: 1, x: 0 },
+  transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] }
+};
+
+const slideInRight = {
+  initial: { opacity: 0, x: 30 },
+  animate: { opacity: 1, x: 0 },
+  transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] }
+};
+
+const floatAnimation = {
+  animate: {
+    y: [0, -10, 0],
+    transition: {
+      duration: 3,
+      repeat: Infinity,
+      ease: "easeInOut"
+    }
+  }
 };
 
 export default function HomePage() {
@@ -56,12 +80,22 @@ export default function HomePage() {
             variants={fadeInUp}
             className="mx-auto max-w-4xl"
           >
-            <h1 className="mb-6 text-4xl font-bold leading-tight text-text dark:text-text-dark sm:text-5xl sm:mb-8 md:text-6xl md:leading-tight transition-colors">
+            <motion.h1
+              initial="initial"
+              animate="animate"
+              variants={fadeInUp}
+              className="mb-6 text-4xl font-bold leading-tight text-text dark:text-text-dark sm:text-5xl sm:mb-8 md:text-6xl md:leading-tight transition-colors"
+            >
               Care with compassion,<br className="hidden sm:block" /> anytime, anywhere.
-            </h1>
-            <p className="mb-8 text-lg leading-relaxed text-text-light dark:text-text-dark-light sm:text-xl sm:mb-10 md:text-2xl md:mb-12 transition-colors">
+            </motion.h1>
+            <motion.p
+              initial="initial"
+              animate="animate"
+              variants={fadeInUp}
+              className="mb-8 text-lg leading-relaxed text-text-light dark:text-text-dark-light sm:text-xl sm:mb-10 md:text-2xl md:mb-12 transition-colors"
+            >
               Connecting Vitals with compassionate Guardians for quality healthcare
-            </p>
+            </motion.p>
 
             {/* Trust Indicators */}
             <motion.div
@@ -91,26 +125,48 @@ export default function HomePage() {
               variants={fadeInUp}
               className="flex flex-col items-center justify-center gap-4 sm:flex-row sm:gap-6"
             >
-              <div className="w-full sm:w-auto">
+              <motion.div
+                initial="initial"
+                animate="animate"
+                variants={slideInLeft}
+                className="w-full sm:w-auto"
+              >
                 <Link href="/auth/register?role=VITAL" className="block w-full sm:w-auto">
-                  <Button size="lg" className="w-full text-base shadow-medium hover:shadow-lg transition-all sm:text-lg">
-                    I am a Vital
-                  </Button>
+                  <motion.div
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <Button size="lg" className="w-full text-base shadow-medium hover:shadow-lg transition-all sm:text-lg group">
+                      I am a Vital
+                      <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
+                    </Button>
+                  </motion.div>
                 </Link>
                 <p className="mt-2 text-xs text-text-muted dark:text-text-dark-muted sm:text-sm transition-colors">
                   Looking for compassionate care
                 </p>
-              </div>
-              <div className="w-full sm:w-auto">
+              </motion.div>
+              <motion.div
+                initial="initial"
+                animate="animate"
+                variants={slideInRight}
+                className="w-full sm:w-auto"
+              >
                 <Link href="/auth/register?role=GUARDIAN" className="block w-full sm:w-auto">
-                  <Button size="lg" variant="secondary" className="w-full text-base shadow-medium hover:shadow-lg transition-all sm:text-lg">
-                    I am a Guardian
-                  </Button>
+                  <motion.div
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <Button size="lg" variant="secondary" className="w-full text-base shadow-medium hover:shadow-lg transition-all sm:text-lg group">
+                      I am a Guardian
+                      <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
+                    </Button>
+                  </motion.div>
                 </Link>
                 <p className="mt-2 text-xs text-text-muted dark:text-text-dark-muted sm:text-sm transition-colors">
                   Ready to provide quality care
                 </p>
-              </div>
+              </motion.div>
             </motion.div>
           </motion.div>
         </div>
@@ -142,14 +198,18 @@ export default function HomePage() {
           >
             {/* Step 1 */}
             <motion.div variants={scaleIn}>
-              <Card className="group relative h-full text-center transition-all duration-300 hover:shadow-medium dark:hover:shadow-dark-medium">
-                <CardHeader className="px-6 pb-4 pt-8 sm:px-8 sm:pt-10">
-                  <motion.div
-                    whileHover={{ scale: 1.1 }}
-                    className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/10 dark:bg-primary-dark-mode/20 transition-all duration-300 group-hover:bg-primary/20 dark:group-hover:bg-primary-dark-mode/30 sm:h-24 sm:w-24"
-                  >
-                    <Users className="h-10 w-10 text-primary dark:text-primary-dark-mode sm:h-12 sm:w-12 transition-colors" />
-                  </motion.div>
+              <motion.div
+                whileHover={{ y: -8 }}
+                transition={{ duration: 0.3 }}
+              >
+                <Card className="group relative h-full text-center transition-all duration-300 hover:shadow-medium dark:hover:shadow-dark-medium border-2 hover:border-primary/20 dark:hover:border-primary-dark-mode/20">
+                  <CardHeader className="px-6 pb-4 pt-8 sm:px-8 sm:pt-10">
+                    <motion.div
+                      whileHover={{ scale: 1.15, rotate: 5 }}
+                      className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/10 dark:bg-primary-dark-mode/20 transition-all duration-300 group-hover:bg-primary/20 dark:group-hover:bg-primary-dark-mode/30 sm:h-24 sm:w-24"
+                    >
+                      <Users className="h-10 w-10 text-primary dark:text-primary-dark-mode sm:h-12 sm:w-12 transition-colors" />
+                    </motion.div>
                   <CardTitle className="mb-3 text-xl font-bold text-text dark:text-text-dark sm:text-2xl transition-colors">
                     1. Create Profile
                   </CardTitle>
@@ -158,18 +218,23 @@ export default function HomePage() {
                   </CardDescription>
                 </CardHeader>
               </Card>
+              </motion.div>
             </motion.div>
 
             {/* Step 2 */}
             <motion.div variants={scaleIn}>
-              <Card className="group relative h-full text-center transition-all duration-300 hover:shadow-medium dark:hover:shadow-dark-medium">
-                <CardHeader className="px-6 pb-4 pt-8 sm:px-8 sm:pt-10">
-                  <motion.div
-                    whileHover={{ scale: 1.1 }}
-                    className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-secondary/10 dark:bg-secondary-dark-mode/20 transition-all duration-300 group-hover:bg-secondary/20 dark:group-hover:bg-secondary-dark-mode/30 sm:h-24 sm:w-24"
-                  >
-                    <Heart className="h-10 w-10 text-secondary dark:text-secondary-dark-mode sm:h-12 sm:w-12 transition-colors" />
-                  </motion.div>
+              <motion.div
+                whileHover={{ y: -8 }}
+                transition={{ duration: 0.3 }}
+              >
+                <Card className="group relative h-full text-center transition-all duration-300 hover:shadow-medium dark:hover:shadow-dark-medium border-2 hover:border-secondary/20 dark:hover:border-secondary-dark-mode/20">
+                  <CardHeader className="px-6 pb-4 pt-8 sm:px-8 sm:pt-10">
+                    <motion.div
+                      whileHover={{ scale: 1.15, rotate: -5 }}
+                      className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-secondary/10 dark:bg-secondary-dark-mode/20 transition-all duration-300 group-hover:bg-secondary/20 dark:group-hover:bg-secondary-dark-mode/30 sm:h-24 sm:w-24"
+                    >
+                      <Heart className="h-10 w-10 text-secondary dark:text-secondary-dark-mode sm:h-12 sm:w-12 transition-colors" />
+                    </motion.div>
                   <CardTitle className="mb-3 text-xl font-bold text-text dark:text-text-dark sm:text-2xl transition-colors">
                     2. Connect
                   </CardTitle>
@@ -178,26 +243,32 @@ export default function HomePage() {
                   </CardDescription>
                 </CardHeader>
               </Card>
+              </motion.div>
             </motion.div>
 
             {/* Step 3 */}
             <motion.div variants={scaleIn} className="sm:col-span-2 md:col-span-1">
-              <Card className="group relative h-full text-center transition-all duration-300 hover:shadow-medium dark:hover:shadow-dark-medium">
-                <CardHeader className="px-6 pb-4 pt-8 sm:px-8 sm:pt-10">
-                  <motion.div
-                    whileHover={{ scale: 1.1 }}
-                    className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-sage/10 dark:bg-sage-dark-mode/20 transition-all duration-300 group-hover:bg-sage/20 dark:group-hover:bg-sage-dark-mode/30 sm:h-24 sm:w-24"
-                  >
-                    <Shield className="h-10 w-10 text-sage dark:text-sage-dark-mode sm:h-12 sm:w-12 transition-colors" />
-                  </motion.div>
-                  <CardTitle className="mb-3 text-xl font-bold text-text dark:text-text-dark sm:text-2xl transition-colors">
-                    3. Care
-                  </CardTitle>
-                  <CardDescription className="text-base leading-relaxed text-text-light dark:text-text-dark-light sm:text-lg transition-colors">
-                    Receive compassionate care or provide quality healthcare services with trust, transparency, and peace of mind.
-                  </CardDescription>
-                </CardHeader>
-              </Card>
+              <motion.div
+                whileHover={{ y: -8 }}
+                transition={{ duration: 0.3 }}
+              >
+                <Card className="group relative h-full text-center transition-all duration-300 hover:shadow-medium dark:hover:shadow-dark-medium border-2 hover:border-sage/20 dark:hover:border-sage-dark-mode/20">
+                  <CardHeader className="px-6 pb-4 pt-8 sm:px-8 sm:pt-10">
+                    <motion.div
+                      whileHover={{ scale: 1.15, rotate: 5 }}
+                      className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-sage/10 dark:bg-sage-dark-mode/20 transition-all duration-300 group-hover:bg-sage/20 dark:group-hover:bg-sage-dark-mode/30 sm:h-24 sm:w-24"
+                    >
+                      <Shield className="h-10 w-10 text-sage dark:text-sage-dark-mode sm:h-12 sm:w-12 transition-colors" />
+                    </motion.div>
+                    <CardTitle className="mb-3 text-xl font-bold text-text dark:text-text-dark sm:text-2xl transition-colors">
+                      3. Care
+                    </CardTitle>
+                    <CardDescription className="text-base leading-relaxed text-text-light dark:text-text-dark-light sm:text-lg transition-colors">
+                      Receive compassionate care or provide quality healthcare services with trust, transparency, and peace of mind.
+                    </CardDescription>
+                  </CardHeader>
+                </Card>
+              </motion.div>
             </motion.div>
           </motion.div>
         </div>
@@ -229,11 +300,19 @@ export default function HomePage() {
             className="grid gap-6 sm:grid-cols-2 md:grid-cols-4 md:gap-8"
           >
             <motion.div variants={scaleIn}>
-              <Card className="h-full text-center transition-all duration-300 hover:shadow-medium dark:hover:shadow-dark-medium">
-                <CardHeader className="px-6 pb-4 pt-8 sm:px-8 sm:pt-10">
-                  <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 dark:bg-primary-dark-mode/20 sm:h-20 sm:w-20">
-                    <Shield className="h-8 w-8 text-primary dark:text-primary-dark-mode sm:h-10 sm:w-10 transition-colors" />
-                  </div>
+              <motion.div
+                whileHover={{ y: -5 }}
+                transition={{ duration: 0.3 }}
+              >
+                <Card className="h-full text-center transition-all duration-300 hover:shadow-medium dark:hover:shadow-dark-medium border-2 hover:border-primary/20 dark:hover:border-primary-dark-mode/20">
+                  <CardHeader className="px-6 pb-4 pt-8 sm:px-8 sm:pt-10">
+                    <motion.div
+                      whileHover={{ scale: 1.1, rotate: 360 }}
+                      transition={{ duration: 0.5 }}
+                      className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 dark:bg-primary-dark-mode/20 sm:h-20 sm:w-20"
+                    >
+                      <Shield className="h-8 w-8 text-primary dark:text-primary-dark-mode sm:h-10 sm:w-10 transition-colors" />
+                    </motion.div>
                   <CardTitle className="mb-2 text-lg font-bold text-text dark:text-text-dark sm:text-xl transition-colors">
                     Verification
                   </CardTitle>
@@ -242,14 +321,23 @@ export default function HomePage() {
                   </CardDescription>
                 </CardHeader>
               </Card>
+              </motion.div>
             </motion.div>
 
             <motion.div variants={scaleIn}>
-              <Card className="h-full text-center transition-all duration-300 hover:shadow-medium dark:hover:shadow-dark-medium">
-                <CardHeader className="px-6 pb-4 pt-8 sm:px-8 sm:pt-10">
-                  <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-sage/10 dark:bg-sage-dark-mode/20 sm:h-20 sm:w-20">
-                    <Lock className="h-8 w-8 text-sage dark:text-sage-dark-mode sm:h-10 sm:w-10 transition-colors" />
-                  </div>
+              <motion.div
+                whileHover={{ y: -5 }}
+                transition={{ duration: 0.3 }}
+              >
+                <Card className="h-full text-center transition-all duration-300 hover:shadow-medium dark:hover:shadow-dark-medium border-2 hover:border-sage/20 dark:hover:border-sage-dark-mode/20">
+                  <CardHeader className="px-6 pb-4 pt-8 sm:px-8 sm:pt-10">
+                    <motion.div
+                      whileHover={{ scale: 1.1, rotate: 360 }}
+                      transition={{ duration: 0.5 }}
+                      className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-sage/10 dark:bg-sage-dark-mode/20 sm:h-20 sm:w-20"
+                    >
+                      <Lock className="h-8 w-8 text-sage dark:text-sage-dark-mode sm:h-10 sm:w-10 transition-colors" />
+                    </motion.div>
                   <CardTitle className="mb-2 text-lg font-bold text-text dark:text-text-dark sm:text-xl transition-colors">
                     Safety & Privacy
                   </CardTitle>
@@ -258,14 +346,23 @@ export default function HomePage() {
                   </CardDescription>
                 </CardHeader>
               </Card>
+              </motion.div>
             </motion.div>
 
             <motion.div variants={scaleIn}>
-              <Card className="h-full text-center transition-all duration-300 hover:shadow-medium dark:hover:shadow-dark-medium">
-                <CardHeader className="px-6 pb-4 pt-8 sm:px-8 sm:pt-10">
-                  <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-secondary/10 dark:bg-secondary-dark-mode/20 sm:h-20 sm:w-20">
-                    <Headphones className="h-8 w-8 text-secondary dark:text-secondary-dark-mode sm:h-10 sm:w-10 transition-colors" />
-                  </div>
+              <motion.div
+                whileHover={{ y: -5 }}
+                transition={{ duration: 0.3 }}
+              >
+                <Card className="h-full text-center transition-all duration-300 hover:shadow-medium dark:hover:shadow-dark-medium border-2 hover:border-secondary/20 dark:hover:border-secondary-dark-mode/20">
+                  <CardHeader className="px-6 pb-4 pt-8 sm:px-8 sm:pt-10">
+                    <motion.div
+                      whileHover={{ scale: 1.1, rotate: 360 }}
+                      transition={{ duration: 0.5 }}
+                      className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-secondary/10 dark:bg-secondary-dark-mode/20 sm:h-20 sm:w-20"
+                    >
+                      <Headphones className="h-8 w-8 text-secondary dark:text-secondary-dark-mode sm:h-10 sm:w-10 transition-colors" />
+                    </motion.div>
                   <CardTitle className="mb-2 text-lg font-bold text-text dark:text-text-dark sm:text-xl transition-colors">
                     Human Support
                   </CardTitle>
@@ -274,22 +371,32 @@ export default function HomePage() {
                   </CardDescription>
                 </CardHeader>
               </Card>
+              </motion.div>
             </motion.div>
 
             <motion.div variants={scaleIn}>
-              <Card className="h-full text-center transition-all duration-300 hover:shadow-medium dark:hover:shadow-dark-medium">
-                <CardHeader className="px-6 pb-4 pt-8 sm:px-8 sm:pt-10">
-                  <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 dark:bg-primary-dark-mode/20 sm:h-20 sm:w-20">
-                    <CheckCircle className="h-8 w-8 text-primary dark:text-primary-dark-mode sm:h-10 sm:w-10 transition-colors" />
-                  </div>
-                  <CardTitle className="mb-2 text-lg font-bold text-text dark:text-text-dark sm:text-xl transition-colors">
-                    Transparent Reviews
-                  </CardTitle>
-                  <CardDescription className="text-sm leading-relaxed text-text-light dark:text-text-dark-light sm:text-base transition-colors">
-                    Read authentic reviews from real Vitals to make informed decisions
-                  </CardDescription>
-                </CardHeader>
-              </Card>
+              <motion.div
+                whileHover={{ y: -5 }}
+                transition={{ duration: 0.3 }}
+              >
+                <Card className="h-full text-center transition-all duration-300 hover:shadow-medium dark:hover:shadow-dark-medium border-2 hover:border-primary/20 dark:hover:border-primary-dark-mode/20">
+                  <CardHeader className="px-6 pb-4 pt-8 sm:px-8 sm:pt-10">
+                    <motion.div
+                      whileHover={{ scale: 1.1, rotate: 360 }}
+                      transition={{ duration: 0.5 }}
+                      className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 dark:bg-primary-dark-mode/20 sm:h-20 sm:w-20"
+                    >
+                      <CheckCircle className="h-8 w-8 text-primary dark:text-primary-dark-mode sm:h-10 sm:w-10 transition-colors" />
+                    </motion.div>
+                    <CardTitle className="mb-2 text-lg font-bold text-text dark:text-text-dark sm:text-xl transition-colors">
+                      Transparent Reviews
+                    </CardTitle>
+                    <CardDescription className="text-sm leading-relaxed text-text-light dark:text-text-dark-light sm:text-base transition-colors">
+                      Read authentic reviews from real Vitals to make informed decisions
+                    </CardDescription>
+                  </CardHeader>
+                </Card>
+              </motion.div>
             </motion.div>
           </motion.div>
         </div>
@@ -351,7 +458,11 @@ export default function HomePage() {
           >
             {/* Testimonial 1 - Taller */}
             <motion.div variants={scaleIn}>
-              <Card className="flex h-full flex-col transition-all duration-300 hover:shadow-medium dark:hover:shadow-dark-medium">
+              <motion.div
+                whileHover={{ y: -5, scale: 1.02 }}
+                transition={{ duration: 0.3 }}
+              >
+                <Card className="flex h-full flex-col transition-all duration-300 hover:shadow-medium dark:hover:shadow-dark-medium border-2 hover:border-primary/20 dark:hover:border-primary-dark-mode/20">
                 <CardContent className="flex flex-1 flex-col px-6 pt-8 sm:px-8 sm:pt-10">
                   <div className="mb-4 flex items-center gap-3">
                     <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 text-lg font-bold text-primary dark:bg-primary-dark-mode/20 dark:text-primary-dark-mode sm:h-14 sm:w-14 sm:text-xl transition-colors">
@@ -372,11 +483,16 @@ export default function HomePage() {
                   </p>
                 </CardContent>
               </Card>
+              </motion.div>
             </motion.div>
 
             {/* Testimonial 2 - Medium */}
             <motion.div variants={scaleIn}>
-              <Card className="flex h-full flex-col transition-all duration-300 hover:shadow-medium dark:hover:shadow-dark-medium">
+              <motion.div
+                whileHover={{ y: -5, scale: 1.02 }}
+                transition={{ duration: 0.3 }}
+              >
+                <Card className="flex h-full flex-col transition-all duration-300 hover:shadow-medium dark:hover:shadow-dark-medium border-2 hover:border-secondary/20 dark:hover:border-secondary-dark-mode/20">
                 <CardContent className="flex flex-1 flex-col px-6 pt-8 sm:px-8 sm:pt-10">
                   <div className="mb-4 flex items-center gap-3">
                     <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-secondary/10 text-lg font-bold text-secondary dark:bg-secondary-dark-mode/20 dark:text-secondary-dark-mode sm:h-14 sm:w-14 sm:text-xl transition-colors">
@@ -397,11 +513,16 @@ export default function HomePage() {
                   </p>
                 </CardContent>
               </Card>
+              </motion.div>
             </motion.div>
 
             {/* Testimonial 3 - Taller */}
             <motion.div variants={scaleIn} className="sm:col-span-2 md:col-span-1">
-              <Card className="flex h-full flex-col transition-all duration-300 hover:shadow-medium dark:hover:shadow-dark-medium">
+              <motion.div
+                whileHover={{ y: -5, scale: 1.02 }}
+                transition={{ duration: 0.3 }}
+              >
+                <Card className="flex h-full flex-col transition-all duration-300 hover:shadow-medium dark:hover:shadow-dark-medium border-2 hover:border-sage/20 dark:hover:border-sage-dark-mode/20">
                 <CardContent className="flex flex-1 flex-col px-6 pt-8 sm:px-8 sm:pt-10">
                   <div className="mb-4 flex items-center gap-3">
                     <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-sage/10 text-lg font-bold text-sage dark:bg-sage-dark-mode/20 dark:text-sage-dark-mode sm:h-14 sm:w-14 sm:text-xl transition-colors">
@@ -422,6 +543,7 @@ export default function HomePage() {
                   </p>
                 </CardContent>
               </Card>
+              </motion.div>
             </motion.div>
           </motion.div>
         </div>

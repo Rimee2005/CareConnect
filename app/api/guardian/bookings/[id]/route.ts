@@ -77,8 +77,8 @@ export async function PATCH(
       const vitalUser = await User.findById(vitalProfile.userId);
 
       // Create notification based on action
-      let notificationType: string;
-      let notificationMessage: string;
+      let notificationType: string | undefined;
+      let notificationMessage: string | undefined;
       let emailTemplate: any = null;
 
       if (action === 'accept') {
@@ -110,7 +110,7 @@ export async function PATCH(
         notificationMessage = `${guardianProfile.name} has started your service`;
       }
 
-      if (notificationType) {
+      if (notificationType && notificationMessage) {
         await Notification.create({
           userId: vitalProfile.userId,
           type: notificationType as any,

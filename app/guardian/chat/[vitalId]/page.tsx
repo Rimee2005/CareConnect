@@ -24,12 +24,12 @@ interface Message {
   createdAt: string;
 }
 
-export default function ChatPage() {
+export default function GuardianChatPage() {
   const { data: session } = useSession();
   const router = useRouter();
   const params = useParams();
   const { t } = useTranslation();
-  const [guardianName, setGuardianName] = useState('');
+  const [vitalName, setVitalName] = useState('');
   const [vitalId, setVitalId] = useState('');
   const [guardianId, setGuardianId] = useState('');
   const [message, setMessage] = useState('');
@@ -51,13 +51,13 @@ export default function ChatPage() {
   }, [messages]);
 
   useEffect(() => {
-    if (session?.user?.role !== 'VITAL') {
+    if (session?.user?.role !== 'GUARDIAN') {
       router.push('/');
       return;
     }
     
-    fetchGuardianInfo();
-  }, [session, router, params.guardianId]);
+    fetchVitalInfo();
+  }, [session, router, params.vitalId]);
 
   useEffect(() => {
     if (!vitalId || !guardianId || !session?.user?.id) return;
@@ -79,7 +79,7 @@ export default function ChatPage() {
       // Join the chat room
       newSocket.emit('join-room', {
         userId: session.user.id,
-        role: 'VITAL',
+        role: 'GUARDIAN',
         chatId: chatIdRef.current,
       });
 
@@ -108,23 +108,23 @@ export default function ChatPage() {
     };
   }, [vitalId, guardianId, session]);
 
-  const fetchGuardianInfo = async () => {
+  const fetchVitalInfo = async () => {
     try {
-      const res = await fetch(`/api/guardians/${params.guardianId}`);
+      const res = await fetch(`/api/vitals/${params.vitalId}`);
       if (res.ok) {
         const data = await res.json();
-        setGuardianName(data.name);
-        setGuardianId(data._id);
+        setVitalName(data.name);
+        setVitalId(data._id);
         
-        // Get Vital profile to get vitalId
-        const vitalRes = await fetch('/api/vital/profile');
-        if (vitalRes.ok) {
-          const vitalData = await vitalRes.json();
-          setVitalId(vitalData._id);
+        // Get Guardian profile to get guardianId
+        const guardianRes = await fetch('/api/guardian/profile');
+        if (guardianRes.ok) {
+          const guardianData = await guardianRes.json();
+          setGuardianId(guardianData._id);
         }
       }
     } catch (error) {
-      console.error('Failed to fetch guardian:', error);
+      console.error('Failed to fetch vital:', error);
     }
   };
 
@@ -157,7 +157,7 @@ export default function ChatPage() {
       vitalId,
       guardianId,
       senderId: session.user.id,
-      senderRole: 'VITAL',
+      senderRole: 'GUARDIAN',
       message: messageText,
       chatId,
     });
@@ -182,7 +182,7 @@ export default function ChatPage() {
         <Card className="mx-auto max-w-4xl">
           <CardHeader className="border-b">
             <div className="flex items-center justify-between">
-              <CardTitle>Chat with {guardianName || 'Guardian'}</CardTitle>
+              <CardTitle>Chat with {vitalName || 'Vital'}</CardTitle>
               <div className="flex items-center gap-2">
                 <div
                   className={`h-2 w-2 rounded-full ${
@@ -207,7 +207,7 @@ export default function ChatPage() {
                 </div>
               ) : (
                 messages.map((msg) => {
-                  const isSender = msg.senderRole === 'VITAL';
+                  const isSender = msg.senderRole === 'GUARDIAN';
                   return (
                     <div
                       key={msg._id}
@@ -222,7 +222,7 @@ export default function ChatPage() {
                       >
                         {!isSender && (
                           <p className="text-xs font-semibold mb-1 opacity-80">
-                            {msg.senderName || guardianName}
+                            {msg.senderName || vitalName}
                           </p>
                         )}
                         <p>{msg.message}</p>
@@ -274,3 +274,4 @@ export default function ChatPage() {
     </div>
   );
 }
+

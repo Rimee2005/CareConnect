@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Bell } from 'lucide-react';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
@@ -11,11 +12,13 @@ interface Notification {
   type: string;
   message: string;
   read: boolean;
+  relatedId?: string;
   createdAt: string;
 }
 
 export function NotificationBell() {
   const { data: session } = useSession();
+  const router = useRouter();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -41,12 +44,64 @@ export function NotificationBell() {
     }
   };
 
-  const markAsRead = async (id: string) => {
+  const handleNotificationClick = async (notification: Notification) => {
+    // Mark as read
     try {
-      await fetch(`/api/notifications/${id}`, { method: 'PATCH' });
+      await fetch(`/api/notifications/${notification._id}`, { method: 'PATCH' });
       fetchNotifications();
     } catch (error) {
       console.error('Failed to mark as read:', error);
+    }
+
+    // Close notification panel
+    setIsOpen(false);
+
+    // Redirect based on notification type
+    if (!session?.user?.role) return;
+
+    switch (notification.type) {
+      case 'BOOKING_REQUEST':
+        if (session.user.role === 'GUARDIAN') {
+          router.push('/guardian/dashboard');
+        }
+        break;
+
+      case 'BOOKING_ACCEPTED':
+      case 'BOOKING_REJECTED':
+      case 'BOOKING_COMPLETED':
+        if (session.user.role === 'VITAL') {
+          router.push('/vital/dashboard');
+        }
+        break;
+
+      case 'MESSAGE':
+        // For messages, we need to get the chat partner's ID
+        // The relatedId is the messageId, we need to fetch the message to get the chat partner
+        if (notification.relatedId) {
+          try {
+            const messageRes = await fetch(`/api/messages/${notification.relatedId}`);
+            if (messageRes.ok) {
+              const message = await messageRes.json();
+              if (session.user.role === 'VITAL') {
+                // Redirect to chat with guardian
+                router.push(`/vital/chat/${message.guardianId}`);
+              } else if (session.user.role === 'GUARDIAN') {
+                // Redirect to chat with vital
+                router.push(`/guardian/chat/${message.vitalId}`);
+              }
+            }
+          } catch (error) {
+            console.error('Failed to fetch message:', error);
+            // Fallback to dashboard
+            router.push(`/${session.user.role.toLowerCase()}/dashboard`);
+          }
+        } else {
+          router.push(`/${session.user.role.toLowerCase()}/dashboard`);
+        }
+        break;
+
+      default:
+        router.push(`/${session.user.role.toLowerCase()}/dashboard`);
     }
   };
 
@@ -90,12 +145,12 @@ export function NotificationBell() {
                 notifications.map((notification) => (
                   <div
                     key={notification._id}
-                    className={`border-b p-4 hover:bg-background-secondary cursor-pointer ${
+                    className={`border-b p-4 hover:bg-background-secondary cursor-pointer transition-colors ${
                       !notification.read ? 'bg-primary/5' : ''
                     }`}
-                    onClick={() => markAsRead(notification._id)}
+                    onClick={() => handleNotificationClick(notification)}
                   >
-                    <p className="text-sm">{notification.message}</p>
+                    <p className="text-sm font-medium">{notification.message}</p>
                     <p className="mt-1 text-xs text-text-muted">
                       {new Date(notification.createdAt).toLocaleString()}
                     </p>

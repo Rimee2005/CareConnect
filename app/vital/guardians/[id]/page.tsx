@@ -130,11 +130,21 @@ export default function GuardianDetailPage() {
     }
   };
 
-  const handleChat = () => {
-    // Check if there's an existing booking with this guardian
-    // For now, redirect to a chat page or show a message
-    if (guardian) {
-      router.push(`/vital/chat/${params.id}`);
+  const handleChat = async () => {
+    if (!guardian || !session?.user?.id) return;
+    
+    // Get Vital profile to ensure we have vitalId
+    try {
+      const vitalRes = await fetch('/api/vital/profile');
+      if (vitalRes.ok) {
+        router.push(`/vital/chat/${params.id}`);
+      } else {
+        setToastMessage('Please create your profile first');
+        setShowToast(true);
+      }
+    } catch (error) {
+      setToastMessage('Failed to load chat');
+      setShowToast(true);
     }
   };
 

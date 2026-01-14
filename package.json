@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "node server.js",
     "build": "next build",
-    "start": "next start",
+    "start": "NODE_ENV=production node server.js",
     "lint": "next lint"
   },
   "dependencies": {
@@ -15,6 +15,7 @@
     "cloudinary": "^1.41.0",
     "clsx": "^2.1.1",
     "date-fns": "^3.6.0",
+    "dotenv": "^17.2.3",
     "framer-motion": "^11.3.19",
     "i18next": "^23.11.5",
     "lucide-react": "^0.424.0",
@@ -27,6 +28,8 @@
     "react-dom": "^18.3.1",
     "react-hook-form": "^7.52.1",
     "react-i18next": "^15.0.1",
+    "socket.io": "^4.8.3",
+    "socket.io-client": "^4.8.3",
     "tailwind-merge": "^2.5.2",
     "tailwindcss-animate": "^1.0.7",
     "zod": "^3.23.8"
@@ -42,6 +45,8 @@
     "eslint-config-next": "14.2.5",
     "postcss": "^8.4.40",
     "tailwindcss": "^3.4.7",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
     "typescript": "^5.5.3"
   }
 }

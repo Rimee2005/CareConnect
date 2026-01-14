@@ -17,7 +17,14 @@ export async function GET() {
       .limit(50)
       .lean();
 
-    return NextResponse.json(notifications);
+    // Convert ObjectIds to strings for frontend
+    const formattedNotifications = notifications.map((notif) => ({
+      ...notif,
+      _id: notif._id.toString(),
+      relatedId: notif.relatedId ? notif.relatedId.toString() : undefined,
+    }));
+
+    return NextResponse.json(formattedNotifications);
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

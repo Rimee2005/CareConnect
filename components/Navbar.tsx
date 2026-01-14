@@ -34,7 +34,11 @@ export function Navbar() {
                   {t('nav.dashboard')}
                 </Button>
               </Link>
-              <Button variant="ghost" size="sm" onClick={() => signOut()}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => signOut({ callbackUrl: '/' })}
+              >
                 {t('nav.logout')}
               </Button>
             </>

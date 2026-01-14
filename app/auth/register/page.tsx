@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { signIn } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -58,7 +59,23 @@ export default function RegisterPage() {
         return;
       }
 
-      // Redirect to profile creation
+      // Automatically log in the user after registration
+      const signInResult = await signIn('credentials', {
+        email,
+        password,
+        redirect: false,
+      });
+
+      if (signInResult?.error) {
+        // If auto-login fails, redirect to login page
+        router.push('/auth/login?registered=true');
+        return;
+      }
+
+      // Refresh router to update session
+      router.refresh();
+      
+      // Redirect to profile creation after successful login
       router.push(`/${role.toLowerCase()}/profile/create`);
     } catch (err) {
       setError('An error occurred. Please try again.');

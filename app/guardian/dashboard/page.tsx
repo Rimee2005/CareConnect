@@ -509,9 +509,9 @@ export default function GuardianDashboardPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="p-4 sm:p-6">
-              <p className="text-sm text-text-muted dark:text-text-dark-muted transition-colors">
-                Service radius: {profile.serviceRadius || 10} km from {profile.location?.city || 'your location'}
-              </p>
+                <p className="text-sm text-text-muted dark:text-text-dark-muted transition-colors">
+                  Service radius: {profile.serviceRadius || 10} km from {profile.location?.city || 'your location'}
+                </p>
             </CardContent>
           </Card>
         )}

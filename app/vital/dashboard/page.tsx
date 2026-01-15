@@ -46,9 +46,17 @@ export default function VitalDashboardPage() {
       return;
     }
 
-    if (status === 'authenticated' && session?.user?.role === 'VITAL') {
-      fetchProfile();
-      fetchBookings();
+    if (status === 'authenticated') {
+      if (session?.user?.role === 'VITAL') {
+        fetchProfile();
+        fetchBookings();
+      } else if (session?.user?.role === 'GUARDIAN') {
+        // Wrong role - redirect to guardian dashboard
+        router.push('/guardian/dashboard');
+      } else {
+        // No role or invalid role - redirect to home
+        router.push('/');
+      }
     }
   }, [session, status, router]);
 

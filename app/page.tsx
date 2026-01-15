@@ -1,5 +1,8 @@
 'use client';
 
+import { useEffect } from 'react';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -57,6 +60,35 @@ const floatAnimation = {
 
 export default function HomePage() {
   const { t } = useTranslation();
+  const { data: session, status } = useSession();
+  const router = useRouter();
+
+  // Redirect authenticated users to their dashboard
+  useEffect(() => {
+    if (status === 'authenticated' && session?.user?.role) {
+      const dashboardUrl = `/${session.user.role.toLowerCase()}/dashboard`;
+      router.push(dashboardUrl);
+    }
+  }, [session, status, router]);
+  
+  // Show loading state while checking session
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen bg-background dark:bg-background-dark transition-colors">
+        <Navbar />
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex items-center justify-center min-h-[60vh]">
+            <p className="text-text dark:text-text-dark transition-colors">{t('common.loading')}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render home page content if user is authenticated (will redirect)
+  if (status === 'authenticated' && session?.user?.role) {
+    return null;
+  }
   
   return (
     <div className="min-h-screen bg-background dark:bg-background-dark transition-colors">

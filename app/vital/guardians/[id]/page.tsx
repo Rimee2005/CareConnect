@@ -14,9 +14,10 @@ import { featureFlags } from '@/lib/feature-flags';
 import { Star, MapPin, Shield, Calendar, Clock, CheckCircle, Languages, Clock as ClockIcon, TrendingUp, DollarSign, Info, Award, Sparkles } from 'lucide-react';
 import { StarRating } from '@/components/StarRating';
 import { Toast } from '@/components/ui/toast';
-import { formatResponseSpeed, getAvailabilityStatus, formatReliabilityScore } from '@/lib/guardian-metrics';
 import { GuardianMap } from '@/components/GuardianMap';
 import { AIBadge } from '@/components/AIBadge';
+import { useVitalLocation } from '@/hooks/useVitalLocation';
+import { formatResponseSpeed, formatReliabilityScore, getAvailabilityStatus } from '@/lib/guardian-metrics';
 
 interface Guardian {
   _id: string;
@@ -76,7 +77,8 @@ interface Guardian {
 interface Review {
   _id: string;
   rating: number;
-  comment?: string;
+  reviewText?: string;
+  comment?: string; // Keep for backward compatibility
   vitalId: {
     name: string;
   };
@@ -94,7 +96,7 @@ export default function GuardianDetailPage() {
   const [bookingNotes, setBookingNotes] = useState('');
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
-  const [vitalLocation, setVitalLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const { vitalLocation, mapRadius, setMapRadius, requestCurrentLocation, fetchVitalLocation } = useVitalLocation();
 
   useEffect(() => {
     if (session?.user?.role !== 'VITAL') {
@@ -104,24 +106,10 @@ export default function GuardianDetailPage() {
     fetchGuardian();
     fetchReviews();
     fetchVitalLocation();
-  }, [params.id, session, router]);
+  }, [params.id, session, router, fetchVitalLocation]);
 
-  const fetchVitalLocation = async () => {
-    try {
-      const res = await fetch('/api/vital/profile');
-      if (res.ok) {
-        const data = await res.json();
-        if (data.location?.coordinates) {
-          setVitalLocation({
-            lat: data.location.coordinates.lat,
-            lng: data.location.coordinates.lng,
-          });
-        }
-      }
-    } catch (error) {
-      console.error('Failed to fetch vital location:', error);
-    }
-  };
+  // Note: useVitalLocation hook already fetches location on mount
+  // This function is kept for backward compatibility but the hook handles it
 
   const fetchGuardian = async () => {
     try {
@@ -631,24 +619,27 @@ export default function GuardianDetailPage() {
               </CardContent>
             </Card>
 
-            {/* Map with Service Radius */}
+            {/* Map View - Show guardian location */}
             {featureFlags.MAP_VIEW && guardian.location?.coordinates && (
               <Card className="mt-6 sm:mt-8">
                 <CardHeader className="px-4 sm:px-6">
-                  <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                  <CardTitle className="text-lg sm:text-xl flex items-center gap-2">
                     <MapPin className="h-5 w-5" />
                     Location & Service Area
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="px-4 sm:px-6">
-                  <div className="h-64 w-full rounded-lg overflow-hidden">
-                    <GuardianMap
-                      guardians={[guardian]}
-                      vitalLocation={vitalLocation}
-                      onGuardianClick={() => {}}
-                    />
-                  </div>
-                  <p className="mt-3 text-xs text-text-muted dark:text-text-dark-muted transition-colors">
+                <CardContent className="px-0 sm:px-0">
+                  <GuardianMap
+                    guardians={[guardian]}
+                    vitalLocation={vitalLocation}
+                    radius={mapRadius}
+                    onRadiusChange={setMapRadius}
+                    onLocationRequest={requestCurrentLocation}
+                    onGuardianClick={() => {}} // No action needed on detail page
+                  />
+                </CardContent>
+                <CardContent className="px-4 sm:px-6 pt-0">
+                  <p className="text-xs text-text-muted dark:text-text-dark-muted transition-colors">
                     Service radius: {guardian.serviceRadius} km from {guardian.location?.city || 'location'}
                     {vitalLocation && guardian.distance !== null && guardian.distance !== undefined && (
                       <span className="ml-2">
@@ -660,44 +651,48 @@ export default function GuardianDetailPage() {
               </Card>
             )}
 
-            {/* Reviews & Ratings - Full Display */}
-            <Card className="mt-6 sm:mt-8">
-              <CardHeader className="px-4 sm:px-6">
-                <CardTitle className="text-lg sm:text-xl">
-                  {t('guardian.detail.reviews')} {guardian.averageRating && `(${guardian.averageRating.toFixed(1)}⭐)`}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="px-4 sm:px-6">
-                {reviews.length > 0 ? (
-                  <div className="space-y-4">
-                    {reviews.map((review) => (
-                      <div key={review._id} className="border-b border-border dark:border-border-dark pb-4 last:border-0 transition-colors">
-                        <div className="mb-2 flex items-center gap-2">
-                          <StarRating
-                            rating={review.rating}
-                            readonly
-                            size="sm"
-                          />
-                          <span className="text-sm font-semibold text-text dark:text-text-dark sm:text-base transition-colors">{review.vitalId.name}</span>
-                        </div>
-                        {(review.reviewText || review.comment) && (
-                          <p className="text-sm leading-relaxed text-text dark:text-text-dark sm:text-base transition-colors">
-                            {review.reviewText || review.comment}
-                          </p>
-                        )}
-                        <p className="mt-2 text-xs text-text-muted dark:text-text-dark-light transition-colors">
-                          {new Date(review.createdAt).toLocaleDateString()}
-                        </p>
+            {reviews.length > 0 && (
+              <>
+                {/* Reviews & Ratings - Full Display */}
+                <Card className="mt-6 sm:mt-8">
+                  <CardHeader className="px-4 sm:px-6">
+                    <CardTitle className="text-lg sm:text-xl">
+                      {t('guardian.detail.reviews')} {guardian.averageRating && `(${guardian.averageRating.toFixed(1)}⭐)`}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="px-4 sm:px-6">
+                    {reviews.length > 0 ? (
+                      <div className="space-y-4">
+                        {reviews.map((review) => (
+                          <div key={review._id} className="border-b border-border dark:border-border-dark pb-4 last:border-0 transition-colors">
+                            <div className="mb-2 flex items-center gap-2">
+                              <StarRating
+                                rating={review.rating}
+                                readonly
+                                size="sm"
+                              />
+                              <span className="text-sm font-semibold text-text dark:text-text-dark sm:text-base transition-colors">{review.vitalId.name}</span>
+                            </div>
+                            {(review.reviewText || review.comment) && (
+                              <p className="text-sm leading-relaxed text-text dark:text-text-dark sm:text-base transition-colors">
+                                {review.reviewText || review.comment}
+                              </p>
+                            )}
+                            <p className="mt-2 text-xs text-text-muted dark:text-text-dark-light transition-colors">
+                              {new Date(review.createdAt).toLocaleDateString()}
+                            </p>
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-sm text-text-muted dark:text-text-dark-muted transition-colors">
-                    {t('guardian.detail.noReviews')}
-                  </p>
-                )}
-              </CardContent>
-            </Card>
+                    ) : (
+                      <p className="text-sm text-text-muted dark:text-text-dark-muted transition-colors">
+                        {t('guardian.detail.noReviews')}
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+              </>
+            )}
           </div>
 
           <div>

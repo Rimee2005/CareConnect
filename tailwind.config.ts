@@ -71,7 +71,6 @@ const config = {
           DEFAULT: "#ef4444",
           light: "#fca5a5",
         },
-        border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
         foreground: "hsl(var(--foreground))",

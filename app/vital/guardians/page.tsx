@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
@@ -12,13 +12,13 @@ import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { useTranslation } from '@/lib/i18n';
-import { Search, Star, MapPin, Shield, Heart, X, ArrowLeft, SlidersHorizontal, Calendar, Clock, CheckCircle, Languages, Clock as ClockIcon, TrendingUp } from 'lucide-react';
+import { Search, Star, MapPin, Shield, Heart, X, ArrowLeft, SlidersHorizontal, Calendar, Clock, Navigation } from 'lucide-react';
 import { AIBadge } from '@/components/AIBadge';
 import { StarRating } from '@/components/StarRating';
-import { GuardianMap } from '@/components/GuardianMap';
+import { LeafletMap } from '@/components/LeafletMap';
 import { featureFlags } from '@/lib/feature-flags';
 import { calculateDistance, formatDistance } from '@/lib/utils';
-import { formatResponseSpeed, getAvailabilityStatus, formatReliabilityScore } from '@/lib/guardian-metrics';
+import { useVitalLocation } from '@/hooks/useVitalLocation';
 
 interface Guardian {
   _id: string;
@@ -55,18 +55,18 @@ interface Guardian {
       lng: number;
     };
   };
-  pricing?: {
-    hourly?: number;
-    daily?: number;
-    monthly?: number;
-    priceBreakdown?: string;
-  };
   averageRating?: number;
   reviewCount?: number;
   responseSpeed?: number | null;
   repeatBookings?: number;
   reliability?: number;
   distance?: number | null;
+  pricing?: {
+    hourly?: number;
+    daily?: number;
+    monthly?: number;
+    priceBreakdown?: string;
+  };
   aiMatch?: {
     score: number;
     explanation: string;
@@ -83,9 +83,16 @@ export default function GuardiansPage() {
   const [guardians, setGuardians] = useState<Guardian[]>([]);
   const [savedGuardians, setSavedGuardians] = useState<Guardian[]>([]);
   const [savedGuardianIds, setSavedGuardianIds] = useState<Set<string>>(new Set());
+  const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [mapBounds, setMapBounds] = useState<{ north: number; south: number; east: number; west: number } | null>(null);
+  
+  // Use shared location hook
+  const { vitalLocation, mapRadius, setMapRadius, requestCurrentLocation } = useVitalLocation();
   
   // Filter states
   const [selectedSpecializations, setSelectedSpecializations] = useState<string[]>([]);
@@ -95,7 +102,22 @@ export default function GuardiansPage() {
   const [distanceRange, setDistanceRange] = useState<[number, number]>([0, 100]);
   const [sortBy, setSortBy] = useState<string>('rating');
   const [activeTab, setActiveTab] = useState<'all' | 'saved'>(searchParams.get('tab') === 'saved' ? 'saved' : 'all');
-  const [vitalLocation, setVitalLocation] = useState<{ lat: number; lng: number } | undefined>();
+
+  // Detect mobile
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -106,7 +128,7 @@ export default function GuardiansPage() {
     if (status === 'authenticated' && session?.user?.role === 'VITAL') {
       fetchGuardians();
       fetchSavedGuardians();
-      fetchVitalLocation();
+      fetchBookings();
     }
   }, [session, status, router]);
 
@@ -115,31 +137,20 @@ export default function GuardiansPage() {
       const res = await fetch('/api/guardians');
       if (res.ok) {
         const data = await res.json();
-        setGuardians(data);
+        setGuardians(data || []);
+        console.log('[Browse Guardians] Fetched guardians:', data?.length || 0);
+      } else {
+        console.error('Failed to fetch guardians:', res.statusText);
+        setGuardians([]);
       }
     } catch (error) {
       console.error('Failed to fetch guardians:', error);
+      setGuardians([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchVitalLocation = async () => {
-    try {
-      const res = await fetch('/api/vital/profile');
-      if (res.ok) {
-        const data = await res.json();
-        if (data.location?.coordinates) {
-          setVitalLocation({
-            lat: data.location.coordinates.lat,
-            lng: data.location.coordinates.lng,
-          });
-        }
-      }
-    } catch (error) {
-      console.error('Failed to fetch vital location:', error);
-    }
-  };
 
   const fetchSavedGuardians = async () => {
     try {
@@ -152,6 +163,26 @@ export default function GuardiansPage() {
     } catch (error) {
       console.error('Failed to fetch saved guardians:', error);
     }
+  };
+
+  const fetchBookings = async () => {
+    try {
+      const res = await fetch('/api/bookings');
+      if (res.ok) {
+        const data = await res.json();
+        setBookings(data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch bookings:', error);
+    }
+  };
+
+  // Helper to check if guardian is a past guardian (completed bookings)
+  const isPastGuardian = (guardianId: string) => {
+    return bookings.some(b => 
+      b.status === 'COMPLETED' && 
+      ((b.guardianId as any)?._id === guardianId || b.guardianId?.name === guardianId)
+    );
   };
 
   const toggleSaveGuardian = async (guardianId: string) => {
@@ -223,9 +254,9 @@ export default function GuardiansPage() {
       experienceRange[1] < 50 ||
       distanceRange[0] > 0 ||
       distanceRange[1] < 100 ||
-      searchTerm !== ''
+      debouncedSearchTerm !== ''
     );
-  }, [selectedSpecializations, selectedDays, selectedGender, experienceRange, distanceRange, searchTerm]);
+  }, [selectedSpecializations, selectedDays, selectedGender, experienceRange, distanceRange, debouncedSearchTerm]);
 
   // Clear all filters
   const clearAllFilters = () => {
@@ -241,13 +272,13 @@ export default function GuardiansPage() {
   const filteredAndSortedGuardians = useMemo(() => {
     let filtered = activeTab === 'saved' ? savedGuardians : guardians;
 
-    // Search filter
-    if (searchTerm) {
+    // Search filter (using debounced term)
+    if (debouncedSearchTerm) {
       filtered = filtered.filter(
         (guardian) =>
-          guardian.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          guardian.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
           guardian.specialization.some((spec) =>
-            spec.toLowerCase().includes(searchTerm.toLowerCase())
+            spec.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
           )
       );
     }
@@ -294,14 +325,30 @@ export default function GuardiansPage() {
       return { ...guardian, distance };
     });
 
-    // Filter by distance range
+    // Filter by distance range - Always show all guardians when browsing
+    // Only apply distance filter if user explicitly wants to filter by map radius
+    // By default, show ALL guardians regardless of location
     let distanceFiltered = guardiansWithDistance;
-    if (vitalLocation) {
-      distanceFiltered = guardiansWithDistance.filter((guardian) => {
-        if (guardian.distance === null) return false;
-        return guardian.distance >= distanceRange[0] && guardian.distance <= distanceRange[1];
-      });
-    }
+    
+    // Don't filter by distance by default - show all guardians when browsing
+    // Distance filtering should only happen if explicitly requested via UI
+    // For now, we'll show all guardians to ensure cards are always visible
+
+    // Filter by map bounds if available AND user is actively using map
+    // Only apply map bounds filter if it's explicitly set and user is interacting with map
+    // For now, we'll make this optional - comment out to show all guardians regardless of map bounds
+    // if (mapBounds) {
+    //   distanceFiltered = distanceFiltered.filter((guardian) => {
+    //     if (!guardian.location?.coordinates) return true; // Include guardians without coordinates
+    //     const { lat, lng } = guardian.location.coordinates;
+    //     return (
+    //       lat >= mapBounds.south &&
+    //       lat <= mapBounds.north &&
+    //       lng >= mapBounds.west &&
+    //       lng <= mapBounds.east
+    //     );
+    //   });
+    // }
 
     // Sorting
     const sorted = [...distanceFiltered].sort((a, b) => {
@@ -340,6 +387,9 @@ export default function GuardiansPage() {
     distanceRange,
     sortBy,
     vitalLocation,
+    debouncedSearchTerm,
+    mapRadius,
+    mapBounds,
   ]);
 
   if (status === 'loading' || loading) {
@@ -495,8 +545,222 @@ export default function GuardiansPage() {
           )}
         </div>
 
-        {/* Filters Panel */}
-        {showFilters && (
+        {/* Filters Panel - Mobile Bottom Sheet */}
+        {showFilters && isMobile && (
+          <div className="fixed inset-0 z-50 flex items-end">
+            <div className="absolute inset-0 bg-black/50" onClick={() => setShowFilters(false)} />
+            <Card className="relative z-10 w-full max-h-[85vh] overflow-y-auto rounded-t-xl border-b-0 animate-in slide-in-from-bottom duration-300">
+              <CardContent className="p-4 sm:p-6">
+                <div className="mb-4 flex items-center justify-between border-b border-border dark:border-border-dark pb-4">
+                  <h3 className="text-lg font-semibold text-text dark:text-text-dark">Filters</h3>
+                  <div className="flex items-center gap-2">
+                    {hasActiveFilters && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={clearAllFilters}
+                        className="text-xs"
+                      >
+                        Clear All
+                      </Button>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowFilters(false)}
+                      className="h-8 w-8 p-0"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+                <div className="space-y-6 pb-4">
+                  {/* Mobile Filter Content - same as desktop but stacked */}
+                  {/* Specialization Filter */}
+                  <div className="space-y-3">
+                    <Label className="text-sm font-semibold text-text dark:text-text-dark">Specialization</Label>
+                    <div className="max-h-40 space-y-2 overflow-y-auto rounded-md border border-border dark:border-border-dark p-3 bg-background-secondary dark:bg-background-dark-secondary">
+                      {allSpecializations.map((spec) => (
+                        <label key={spec} className="flex items-center gap-2 cursor-pointer hover:bg-background dark:hover:bg-background-dark p-1 rounded">
+                          <input
+                            type="checkbox"
+                            checked={selectedSpecializations.includes(spec)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedSpecializations([...selectedSpecializations, spec]);
+                              } else {
+                                setSelectedSpecializations(selectedSpecializations.filter(s => s !== spec));
+                              }
+                            }}
+                            className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary dark:border-border-dark dark:focus:ring-primary-dark-mode"
+                          />
+                          <span className="text-sm text-text dark:text-text-dark">{spec}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Availability Days Filter */}
+                  <div className="space-y-3">
+                    <Label className="text-sm font-semibold text-text dark:text-text-dark">Available Days</Label>
+                    <div className="space-y-2 rounded-md border border-border dark:border-border-dark p-3 bg-background-secondary dark:bg-background-dark-secondary">
+                      {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day) => (
+                        <label key={day} className="flex items-center gap-2 cursor-pointer hover:bg-background dark:hover:bg-background-dark p-1 rounded">
+                          <input
+                            type="checkbox"
+                            checked={selectedDays.includes(day)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedDays([...selectedDays, day]);
+                              } else {
+                                setSelectedDays(selectedDays.filter(d => d !== day));
+                              }
+                            }}
+                            className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary dark:border-border-dark dark:focus:ring-primary-dark-mode"
+                          />
+                          <span className="text-sm text-text dark:text-text-dark">{day}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Gender Filter */}
+                  <div className="space-y-3">
+                    <Label htmlFor="gender-mobile" className="text-sm font-semibold text-text dark:text-text-dark">Gender</Label>
+                    <Select
+                      id="gender-mobile"
+                      value={selectedGender}
+                      onChange={(e) => setSelectedGender(e.target.value)}
+                    >
+                      <option value="">All Genders</option>
+                      <option value="Male">Male</option>
+                      <option value="Female">Female</option>
+                      <option value="Other">Other</option>
+                      <option value="Prefer not to say">Prefer not to say</option>
+                    </Select>
+                  </div>
+
+                  {/* Experience Range */}
+                  <div className="space-y-3">
+                    <Label className="text-sm font-semibold text-text dark:text-text-dark">
+                      Experience: {experienceRange[0]} - {experienceRange[1]} years
+                    </Label>
+                    <div className="space-y-3 rounded-md border border-border dark:border-border-dark p-4 bg-background-secondary dark:bg-background-dark-secondary">
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="number"
+                          min="0"
+                          max="50"
+                          value={experienceRange[0]}
+                          onChange={(e) => setExperienceRange([Number(e.target.value), experienceRange[1]])}
+                          className="w-20"
+                        />
+                        <span className="text-sm text-text-muted dark:text-text-dark-muted">to</span>
+                        <Input
+                          type="number"
+                          min="0"
+                          max="50"
+                          value={experienceRange[1]}
+                          onChange={(e) => setExperienceRange([experienceRange[0], Number(e.target.value)])}
+                          className="w-20"
+                        />
+                      </div>
+                      <input
+                        type="range"
+                        min="0"
+                        max="50"
+                        value={experienceRange[0]}
+                        onChange={(e) => setExperienceRange([Number(e.target.value), experienceRange[1]])}
+                        className="w-full accent-primary dark:accent-primary-dark-mode"
+                      />
+                      <input
+                        type="range"
+                        min="0"
+                        max="50"
+                        value={experienceRange[1]}
+                        onChange={(e) => setExperienceRange([experienceRange[0], Number(e.target.value)])}
+                        className="w-full accent-primary dark:accent-primary-dark-mode"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Distance Range */}
+                  <div className="space-y-3">
+                    <Label className="text-sm font-semibold text-text dark:text-text-dark">
+                      Service Radius: {distanceRange[0]} - {distanceRange[1]} km
+                    </Label>
+                    <div className="space-y-3 rounded-md border border-border dark:border-border-dark p-4 bg-background-secondary dark:bg-background-dark-secondary">
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={distanceRange[0]}
+                          onChange={(e) => setDistanceRange([Number(e.target.value), distanceRange[1]])}
+                          className="w-20"
+                        />
+                        <span className="text-sm text-text-muted dark:text-text-dark-muted">to</span>
+                        <Input
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={distanceRange[1]}
+                          onChange={(e) => setDistanceRange([distanceRange[0], Number(e.target.value)])}
+                          className="w-20"
+                        />
+                      </div>
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        value={distanceRange[0]}
+                        onChange={(e) => setDistanceRange([Number(e.target.value), distanceRange[1]])}
+                        className="w-full accent-primary dark:accent-primary-dark-mode"
+                      />
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        value={distanceRange[1]}
+                        onChange={(e) => setDistanceRange([distanceRange[0], Number(e.target.value)])}
+                        className="w-full accent-primary dark:accent-primary-dark-mode"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Sort By */}
+                  <div className="space-y-3">
+                    <Label htmlFor="sort-mobile" className="text-sm font-semibold text-text dark:text-text-dark">Sort By</Label>
+                    <Select
+                      id="sort-mobile"
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value)}
+                    >
+                      <option value="rating">Highest Rating</option>
+                      {featureFlags.AI_MATCHING && (
+                        <option value="ai-recommended">AI-Recommended</option>
+                      )}
+                      <option value="distance">Nearest First</option>
+                      <option value="experience">Most Experience</option>
+                      <option value="name">Name (A-Z)</option>
+                    </Select>
+                  </div>
+                </div>
+                <div className="sticky bottom-0 border-t border-border dark:border-border-dark bg-background dark:bg-background-dark pt-4 mt-4">
+                  <Button
+                    className="w-full"
+                    onClick={() => setShowFilters(false)}
+                  >
+                    Apply Filters
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Filters Panel - Desktop Side Panel */}
+        {showFilters && !isMobile && (
           <Card className="mb-6 animate-in slide-in-from-top-2 duration-300 border-primary/20">
             <CardContent className="p-4 sm:p-6">
               <div className="mb-6 flex items-center justify-between border-b border-border dark:border-border-dark pb-4">
@@ -609,7 +873,7 @@ export default function GuardiansPage() {
                       max="50"
                       value={experienceRange[0]}
                       onChange={(e) => setExperienceRange([Number(e.target.value), experienceRange[1]])}
-                      className="w-full"
+                      className="w-full accent-primary dark:accent-primary-dark-mode"
                     />
                     <input
                       type="range"
@@ -617,7 +881,7 @@ export default function GuardiansPage() {
                       max="50"
                       value={experienceRange[1]}
                       onChange={(e) => setExperienceRange([experienceRange[0], Number(e.target.value)])}
-                      className="w-full"
+                      className="w-full accent-primary dark:accent-primary-dark-mode"
                     />
                   </div>
                 </div>
@@ -653,7 +917,7 @@ export default function GuardiansPage() {
                       max="100"
                       value={distanceRange[0]}
                       onChange={(e) => setDistanceRange([Number(e.target.value), distanceRange[1]])}
-                      className="w-full"
+                      className="w-full accent-primary dark:accent-primary-dark-mode"
                     />
                     <input
                       type="range"
@@ -661,7 +925,7 @@ export default function GuardiansPage() {
                       max="100"
                       value={distanceRange[1]}
                       onChange={(e) => setDistanceRange([distanceRange[0], Number(e.target.value)])}
-                      className="w-full"
+                      className="w-full accent-primary dark:accent-primary-dark-mode"
                     />
                   </div>
                 </div>
@@ -695,22 +959,27 @@ export default function GuardiansPage() {
         </div>
 
         {/* Map View */}
-        {featureFlags.MAP_VIEW && filteredAndSortedGuardians.length > 0 && (
-          <GuardianMap
+        {featureFlags.MAP_VIEW && (
+          <LeafletMap
             guardians={filteredAndSortedGuardians}
             vitalLocation={vitalLocation}
+            radius={mapRadius}
+            onRadiusChange={setMapRadius}
+            onMapBoundsChange={setMapBounds}
+            onLocationRequest={requestCurrentLocation}
             onGuardianClick={(guardian) => {
               router.push(`/vital/guardians/${guardian._id}`);
             }}
           />
         )}
 
-        {/* Guardian Cards */}
-        {filteredAndSortedGuardians.length > 0 ? (
+        {/* Guardian Cards - Always visible when browsing */}
+        {!loading && (filteredAndSortedGuardians.length > 0 ? (
           <div className="grid gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {filteredAndSortedGuardians.map((guardian) => {
               const availabilityStatus = getThisWeekAvailability(guardian);
               const isSaved = savedGuardianIds.has(guardian._id);
+              const hasPastBooking = isPastGuardian(guardian._id);
               
               return (
                 <Card key={guardian._id} className="group relative overflow-hidden border-2 border-border/50 dark:border-border-dark/50 hover:border-primary/30 dark:hover:border-primary-dark-mode/30 hover:shadow-lg dark:hover:shadow-dark-lg transition-all duration-300 bg-background dark:bg-background-dark">
@@ -782,121 +1051,106 @@ export default function GuardiansPage() {
                       
                     {/* Card Content - Simplified for Discovery View */}
                     <div className="p-4 sm:p-5">
-                        {/* Name and Rating Row */}
-                        <div className="mb-2.5 flex items-start justify-between gap-2">
-                          <div className="flex-1 min-w-0">
-                            <h3 className="mb-1 text-lg font-bold text-text dark:text-text-dark sm:text-xl transition-colors line-clamp-1">
-                              {guardian.name}
-                            </h3>
-                            {guardian.averageRating ? (
-                              <div className="flex items-center gap-1.5">
-                                <StarRating
-                                  rating={guardian.averageRating}
-                                  readonly
-                                  size="sm"
-                                />
-                                <span className="text-sm font-semibold text-text dark:text-text-dark transition-colors">
-                                  {guardian.averageRating.toFixed(1)}
-                                </span>
-                                <span className="text-xs text-text-muted dark:text-text-dark-muted transition-colors">
-                                  ({guardian.reviewCount || 0})
-                                </span>
-                              </div>
-                            ) : (
-                              <Badge variant="outline" className="mt-1 text-xs">
-                                {t('guardians.new')}
-                              </Badge>
-                            )}
-                          </div>
+                      {/* Name and Rating Row */}
+                      <div className="mb-2.5 flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="mb-1 text-lg font-bold text-text dark:text-text-dark sm:text-xl transition-colors line-clamp-1">
+                            {guardian.name}
+                          </h3>
+                          {guardian.averageRating ? (
+                            <div className="flex items-center gap-1.5">
+                              <StarRating
+                                rating={guardian.averageRating}
+                                readonly
+                                size="sm"
+                              />
+                              <span className="text-sm font-semibold text-text dark:text-text-dark transition-colors">
+                                {guardian.averageRating.toFixed(1)}
+                              </span>
+                              <span className="text-xs text-text-muted dark:text-text-dark-muted transition-colors">
+                                ({guardian.reviewCount || 0})
+                              </span>
+                            </div>
+                          ) : (
+                            <Badge variant="outline" className="mt-1 text-xs">
+                              {t('guardians.new')}
+                            </Badge>
+                          )}
                         </div>
-                        
-                        {/* Top 2-3 Care Tags Only */}
-                        {featureFlags.ADVANCED_GUARDIAN_PROFILE && guardian.careTags && guardian.careTags.length > 0 && (
-                          <div className="mb-2.5 flex flex-wrap gap-1.5">
-                            {guardian.careTags.slice(0, 3).map((tag, idx) => (
-                              <Badge 
-                                key={idx} 
-                                variant="default" 
-                                className="text-xs font-medium bg-primary/15 text-primary border border-primary/30 dark:bg-primary-dark-mode/15 dark:text-primary-dark-mode dark:border-primary-dark-mode/30 px-2 py-0.5"
-                              >
-                                {tag}
-                              </Badge>
-                            ))}
-                            {guardian.careTags.length > 3 && (
-                              <Badge variant="outline" className="text-xs px-2 py-0.5">
-                                +{guardian.careTags.length - 3}
-                              </Badge>
-                            )}
+                      </div>
+                      
+                      {/* Top 2-3 Care Tags Only */}
+                      {featureFlags.ADVANCED_GUARDIAN_PROFILE && guardian.careTags && guardian.careTags.length > 0 && (
+                        <div className="mb-2.5 flex flex-wrap gap-1.5">
+                          {guardian.careTags.slice(0, 3).map((tag, idx) => (
+                            <Badge 
+                              key={idx} 
+                              variant="default" 
+                              className="text-xs font-medium bg-primary/15 text-primary border border-primary/30 dark:bg-primary-dark-mode/15 dark:text-primary-dark-mode dark:border-primary-dark-mode/30 px-2 py-0.5"
+                            >
+                              {tag}
+                            </Badge>
+                          ))}
+                          {guardian.careTags.length > 3 && (
+                            <Badge variant="outline" className="text-xs px-2 py-0.5">
+                              +{guardian.careTags.length - 3}
+                            </Badge>
+                          )}
+                        </div>
+                      )}
+                      
+                      {/* Essential Info - Compact */}
+                      <div className="mb-2.5 space-y-1.5">
+                        {/* Starting Price */}
+                        {featureFlags.PRICING_SYSTEM && guardian.pricing && (
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-sm font-bold text-secondary dark:text-secondary-dark-mode transition-colors">
+                              {guardian.pricing.hourly ? (
+                                <>From ₹{guardian.pricing.hourly}/hr</>
+                              ) : guardian.pricing.daily ? (
+                                <>From ₹{guardian.pricing.daily}/day</>
+                              ) : guardian.pricing.monthly ? (
+                                <>From ₹{guardian.pricing.monthly}/month</>
+                              ) : (
+                                <span className="text-xs text-text-muted dark:text-text-dark-muted">
+                                  {t('form.pricing.availableOnRequest')}
+                                </span>
+                              )}
+                            </span>
                           </div>
                         )}
                         
-                        {/* Essential Info - Compact */}
-                        <div className="mb-2.5 space-y-1.5">
-                          {/* Starting Price */}
-                          {featureFlags.PRICING_SYSTEM && guardian.pricing && (
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-sm font-bold text-secondary dark:text-secondary-dark-mode transition-colors">
-                                {guardian.pricing.hourly ? (
-                                  <>From ₹{guardian.pricing.hourly}/hr</>
-                                ) : guardian.pricing.daily ? (
-                                  <>From ₹{guardian.pricing.daily}/day</>
-                                ) : guardian.pricing.monthly ? (
-                                  <>From ₹{guardian.pricing.monthly}/month</>
-                                ) : (
-                                  <span className="text-xs text-text-muted dark:text-text-dark-muted">
-                                    {t('form.pricing.availableOnRequest')}
-                                  </span>
-                                )}
-                              </span>
-                            </div>
-                          )}
-                          
-                          {/* Availability Status */}
-                          {featureFlags.ADVANCED_GUARDIAN_PROFILE && (() => {
-                            const availStatus = getAvailabilityStatus(guardian.availability);
-                            if (availStatus.today === 'Available') {
-                              return (
-                                <div className="flex items-center gap-1.5">
-                                  <Badge variant="outline" className="text-xs bg-success/10 text-success border-success/30 font-medium">
-                                    {t('guardians.availableToday')}
-                                  </Badge>
-                                </div>
-                              );
-                            } else if (availStatus.tomorrow === 'Available') {
-                              return (
-                                <div className="flex items-center gap-1.5">
-                                  <Badge variant="outline" className="text-xs bg-warning/10 text-warning border-warning/30 font-medium">
-                                    {t('guardians.availableTomorrow')}
-                                  </Badge>
-                                </div>
-                              );
-                            }
-                            return null;
-                          })()}
-                          
-                          {/* Distance */}
-                          {guardian.distance !== null && vitalLocation && (
-                            <div className="flex items-center gap-1.5 text-xs text-text-muted dark:text-text-dark-muted">
-                              <MapPin className="h-3 w-3" />
-                              <span>{formatDistance(guardian.distance)} {t('guardians.away')}</span>
-                            </div>
-                          )}
-                          
-                          {/* Optional: Response Speed (1 line max) */}
-                          {featureFlags.ADVANCED_GUARDIAN_PROFILE && guardian.responseSpeed !== null && guardian.responseSpeed !== undefined && (
-                            <div className="flex items-center gap-1.5 text-xs text-text-muted dark:text-text-dark-muted">
-                              <ClockIcon className="h-3 w-3" />
-                              <span className="line-clamp-1">{formatResponseSpeed(guardian.responseSpeed)}</span>
-                            </div>
-                          )}
-                        </div>
+                        {/* Distance */}
+                        {guardian.distance !== null && vitalLocation && (
+                          <div className="flex items-center gap-1.5 text-xs text-text-muted dark:text-text-dark-muted">
+                            <MapPin className="h-3 w-3" />
+                            <span>{formatDistance(guardian.distance)} {t('guardians.away')}</span>
+                          </div>
+                        )}
                         
-                        {/* Primary CTA: Book Service */}
+                        {/* Trusted by X families */}
+                        {guardian.reviewCount !== undefined && guardian.reviewCount > 0 && (
+                          <div className="flex items-center gap-1.5 text-xs text-text-muted dark:text-text-dark-muted">
+                            <span>Trusted by {guardian.reviewCount} {guardian.reviewCount === 1 ? 'family' : 'families'}</span>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Primary CTA: Book Service */}
+                      <div className="flex flex-col gap-2">
                         <Link href={`/vital/guardians/${guardian._id}`} className="block">
                           <Button className="w-full font-semibold shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-200 group-hover:bg-primary group-hover:text-white" size="sm">
                             {t('vital.book')}
                           </Button>
                         </Link>
+                        {hasPastBooking && (
+                          <Link href={`/vital/guardians/${guardian._id}`}>
+                            <Button variant="outline" size="sm" className="w-full whitespace-nowrap text-xs sm:text-sm">
+                              Book Again
+                            </Button>
+                          </Link>
+                        )}
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -946,7 +1200,7 @@ export default function GuardiansPage() {
               )}
             </CardContent>
           </Card>
-        )}
+        ))}
       </div>
     </div>
   );

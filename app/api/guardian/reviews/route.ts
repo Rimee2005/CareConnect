@@ -26,18 +26,24 @@ export async function GET() {
       .lean();
 
     // Format reviews for frontend
-    const formattedReviews = reviews.map((review) => ({
-      ...review,
-      _id: review._id.toString(),
-      bookingId: review.bookingId.toString(),
-      vitalId: {
-        _id: review.vitalId._id.toString(),
-        name: review.vitalId.name,
-        profilePhoto: review.vitalId.profilePhoto,
-      },
-      reviewText: review.reviewText || review.comment, // Support both field names
-      createdAt: review.createdAt,
-    }));
+    const formattedReviews = reviews.map((review) => {
+      const vitalId = typeof review.vitalId === 'object' && review.vitalId !== null && '_id' in review.vitalId
+        ? review.vitalId as { _id: any; name?: string; profilePhoto?: string }
+        : null;
+      
+      return {
+        ...review,
+        _id: review._id.toString(),
+        bookingId: review.bookingId.toString(),
+        vitalId: vitalId ? {
+          _id: vitalId._id.toString(),
+          name: vitalId.name || '',
+          profilePhoto: vitalId.profilePhoto || '',
+        } : { _id: '', name: '', profilePhoto: '' },
+        reviewText: review.reviewText || '',
+        createdAt: review.createdAt,
+      };
+    });
 
     return NextResponse.json(formattedReviews);
   } catch (error: any) {

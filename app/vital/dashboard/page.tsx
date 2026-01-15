@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -10,8 +10,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useTranslation } from '@/lib/i18n';
 import { featureFlags } from '@/lib/feature-flags';
-import { AlertCircle, Plus, Search, Calendar, MessageSquare } from 'lucide-react';
+import { AlertCircle, Plus, Search, Calendar, MessageSquare, MapPin, Shield, Users } from 'lucide-react';
 import { StarRating } from '@/components/StarRating';
+import { LeafletMap } from '@/components/LeafletMap';
+import { useVitalLocation } from '@/hooks/useVitalLocation';
+import { calculateDistance } from '@/lib/utils';
 
 interface VitalProfile {
   _id: string;
@@ -30,6 +33,42 @@ interface Booking {
     profilePhoto?: string;
   };
   createdAt: string;
+  startDate?: string;
+  endDate?: string;
+}
+
+interface Guardian {
+  _id: string;
+  name: string;
+  age: number;
+  gender: string;
+  experience: number;
+  specialization: string[];
+  availability: {
+    days: string[];
+    hours: {
+      start: string;
+      end: string;
+    };
+  };
+  profilePhoto?: string;
+  isVerified: boolean;
+  serviceRadius: number;
+  location?: {
+    city?: string;
+    coordinates?: {
+      lat: number;
+      lng: number;
+    };
+  };
+  averageRating?: number;
+  reviewCount?: number;
+  aiMatch?: {
+    score: number;
+    explanation: string;
+    reasons: string[];
+    isRecommended: boolean;
+  };
 }
 
 export default function VitalDashboardPage() {
@@ -38,7 +77,10 @@ export default function VitalDashboardPage() {
   const { t } = useTranslation();
   const [profile, setProfile] = useState<VitalProfile | null>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [guardians, setGuardians] = useState<Guardian[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedGuardian, setSelectedGuardian] = useState<Guardian | null>(null);
+  const { vitalLocation } = useVitalLocation();
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -49,6 +91,7 @@ export default function VitalDashboardPage() {
     if (status === 'authenticated' && session?.user?.role === 'VITAL') {
       fetchProfile();
       fetchBookings();
+      fetchGuardians();
     }
   }, [session, status, router]);
 
@@ -79,6 +122,58 @@ export default function VitalDashboardPage() {
       console.error('Failed to fetch bookings:', error);
     }
   };
+
+  const fetchGuardians = async () => {
+    try {
+      const res = await fetch('/api/guardians');
+      if (res.ok) {
+        const data = await res.json();
+        setGuardians(data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch guardians:', error);
+    }
+  };
+
+  // Get availability status for guardian
+  const getThisWeekAvailability = (guardian: Guardian): 'high' | 'medium' | 'low' => {
+    const today = new Date();
+    const dayOfWeek = today.getDay();
+    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    
+    let availableDays = 0;
+    for (let i = 0; i < 7; i++) {
+      const checkDay = (dayOfWeek + i) % 7;
+      const dayName = dayNames[checkDay];
+      if (guardian.availability.days.includes(dayName)) {
+        availableDays++;
+      }
+    }
+    
+    if (availableDays >= 5) return 'high';
+    if (availableDays >= 3) return 'medium';
+    return 'low';
+  };
+
+  // Filter nearest guardians for map view
+  const nearestGuardians = useMemo(() => {
+    if (!vitalLocation) return guardians;
+    
+    return guardians
+      .filter(guardian => guardian.location?.coordinates)
+      .map(guardian => {
+        const distance = calculateDistance(
+          vitalLocation.lat,
+          vitalLocation.lng,
+          guardian.location!.coordinates!.lat,
+          guardian.location!.coordinates!.lng
+        );
+        return { ...guardian, distance };
+      })
+      .sort((a, b) => (a.distance || Infinity) - (b.distance || Infinity))
+      .slice(0, 10) // Top 10 nearest
+      .map(({ distance, ...guardian }) => guardian); // Remove distance before passing to map
+  }, [guardians, vitalLocation]);
 
   if (status === 'loading' || loading) {
     return (
@@ -116,7 +211,16 @@ export default function VitalDashboardPage() {
   }
 
   const completedBookings = bookings.filter((b) => b.status === 'COMPLETED');
-  const pendingBookings = bookings.filter((b) => b.status === 'PENDING' || b.status === 'ACCEPTED');
+  const activeBookings = bookings.filter((b) => b.status === 'ACCEPTED' || b.status === 'ONGOING');
+  const pendingBookings = bookings.filter((b) => b.status === 'PENDING');
+  const allBookings = [...pendingBookings, ...activeBookings, ...completedBookings];
+  
+  // Helper to check if guardian is a past guardian (defined after completedBookings)
+  const isPastGuardian = (guardianId: string) => {
+    return completedBookings.some(b => 
+      (b.guardianId as any)._id === guardianId || b.guardianId.name === guardianId
+    );
+  };
 
   return (
     <div className="min-h-screen">
@@ -153,13 +257,11 @@ export default function VitalDashboardPage() {
                   <p className="text-sm text-text-muted">Age: {profile.age}</p>
                 </div>
               </div>
-              <Button 
-                variant="outline" 
-                className="mt-4 w-full"
-                onClick={() => router.push('/vital/profile/create')}
-              >
-                Edit Profile
-              </Button>
+              <Link href="/vital/profile/create">
+                <Button variant="outline" className="mt-4 w-full">
+                  Edit Profile
+                </Button>
+              </Link>
             </CardContent>
           </Card>
 
@@ -179,68 +281,50 @@ export default function VitalDashboardPage() {
           </Card>
         </div>
 
-        {/* Completed Bookings - Review Prompt */}
-        {completedBookings.length > 0 && (
+        {/* Map View - Nearest Guardians Only */}
+        {featureFlags.MAP_VIEW && vitalLocation && nearestGuardians.length > 0 && (
           <Card className="mb-8">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                Completed Services
+                <MapPin className="h-5 w-5" />
+                Nearest Guardians
               </CardTitle>
               <CardDescription>
-                Leave a review to help others find quality care
+                Top 10 guardians closest to your location
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {completedBookings.map((booking) => (
-                  <div
-                    key={booking._id}
-                    className="flex items-center justify-between rounded-lg border p-4"
-                  >
-                    <div className="flex items-center gap-4">
-                      {booking.guardianId.profilePhoto ? (
-                        <img
-                          src={booking.guardianId.profilePhoto}
-                          alt={booking.guardianId.name}
-                          className="h-12 w-12 rounded-full object-cover"
-                        />
-                      ) : (
-                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-                          <span className="text-lg text-primary">
-                            {booking.guardianId.name.charAt(0).toUpperCase()}
-                          </span>
-                        </div>
-                      )}
-                      <div>
-                        <p className="font-semibold">{booking.guardianId.name}</p>
-                        <p className="text-sm text-text-muted">
-                          Completed on {new Date(booking.createdAt).toLocaleDateString()}
-                        </p>
-                      </div>
-                    </div>
-                    <Link href={`/vital/reviews/create/${booking._id}`}>
-                      <Button size="sm">Leave Review</Button>
-                    </Link>
-                  </div>
-                ))}
-              </div>
+              <LeafletMap
+                guardians={nearestGuardians}
+                vitalLocation={vitalLocation}
+                radius={10}
+                onGuardianClick={(guardian) => {
+                  router.push(`/vital/guardians/${guardian._id}`);
+                }}
+              />
             </CardContent>
           </Card>
         )}
 
-        {/* Active Bookings */}
-        {pendingBookings.length > 0 && (
+        {/* Care History Section */}
+        {allBookings.length > 0 && (
           <Card className="mb-8">
             <CardHeader>
-              <CardTitle>Active Bookings</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="h-5 w-5" />
+                Care History
+              </CardTitle>
+              <CardDescription>
+                Track your booking status and care history
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
+                {/* Pending Bookings */}
                 {pendingBookings.map((booking) => (
                   <div
                     key={booking._id}
-                    className="flex items-center justify-between rounded-lg border p-4"
+                    className="flex items-center justify-between rounded-lg border border-yellow-200 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-900/20 p-4 animate-pulse"
                   >
                     <div className="flex items-center gap-4">
                       {booking.guardianId.profilePhoto ? (
@@ -250,15 +334,20 @@ export default function VitalDashboardPage() {
                           className="h-12 w-12 rounded-full object-cover"
                         />
                       ) : (
-                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-                          <span className="text-lg text-primary">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-yellow-100 dark:bg-yellow-800">
+                          <span className="text-lg text-yellow-700 dark:text-yellow-300">
                             {booking.guardianId.name.charAt(0).toUpperCase()}
                           </span>
                         </div>
                       )}
                       <div>
                         <p className="font-semibold">{booking.guardianId.name}</p>
-                        <Badge variant="outline">{booking.status}</Badge>
+                        <Badge className="bg-yellow-500 text-white animate-pulse">
+                          Pending
+                        </Badge>
+                        <p className="mt-1 text-xs text-text-muted">
+                          Awaiting guardian response
+                        </p>
                       </div>
                     </div>
                     {booking.guardianId && (
@@ -271,6 +360,118 @@ export default function VitalDashboardPage() {
                     )}
                   </div>
                 ))}
+
+                {/* Active Bookings */}
+                {activeBookings.map((booking) => (
+                  <div
+                    key={booking._id}
+                    className="flex items-center justify-between rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 p-4"
+                    style={{
+                      animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite'
+                    }}
+                  >
+                    <div className="flex items-center gap-4">
+                      {booking.guardianId.profilePhoto ? (
+                        <img
+                          src={booking.guardianId.profilePhoto}
+                          alt={booking.guardianId.name}
+                          className="h-12 w-12 rounded-full object-cover ring-2 ring-blue-400"
+                        />
+                      ) : (
+                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-800 ring-2 ring-blue-400">
+                          <span className="text-lg text-blue-700 dark:text-blue-300">
+                            {booking.guardianId.name.charAt(0).toUpperCase()}
+                          </span>
+                        </div>
+                      )}
+                      <div>
+                        <p className="font-semibold">{booking.guardianId.name}</p>
+                        <Badge className="bg-blue-500 text-white">
+                          {booking.status === 'ONGOING' ? 'Active' : 'Accepted'}
+                        </Badge>
+                        {booking.startDate && (
+                          <p className="mt-1 text-xs text-text-muted">
+                            Started: {new Date(booking.startDate).toLocaleDateString()}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    {booking.guardianId && (
+                      <Link href={`/vital/chat/${(booking.guardianId as any)._id || ''}`}>
+                        <Button variant="outline" size="sm">
+                          <MessageSquare className="mr-2 h-4 w-4" />
+                          Chat
+                        </Button>
+                      </Link>
+                    )}
+                  </div>
+                ))}
+
+                {/* Completed Bookings */}
+                {completedBookings.map((booking) => {
+                  // Find guardian data for availability strip
+                  const guardianData = guardians.find(g => 
+                    g._id === (booking.guardianId as any)._id || g.name === booking.guardianId.name
+                  );
+                  const availabilityStatus = guardianData ? getThisWeekAvailability(guardianData) : null;
+                  
+                  return (
+                    <div
+                      key={booking._id}
+                      className="rounded-lg border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 p-4 transition-all duration-300 hover:shadow-md"
+                    >
+                      {/* This Week's Availability Strip for Past Guardian */}
+                      {availabilityStatus && (
+                        <div className={`h-1.5 w-full mb-3 rounded-t ${
+                          availabilityStatus === 'high' ? 'bg-green-500' :
+                          availabilityStatus === 'medium' ? 'bg-yellow-500' :
+                          'bg-red-500'
+                        }`} title={`This Week's Availability: ${availabilityStatus}`} />
+                      )}
+                      
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          {booking.guardianId.profilePhoto ? (
+                            <img
+                              src={booking.guardianId.profilePhoto}
+                              alt={booking.guardianId.name}
+                              className="h-12 w-12 rounded-full object-cover"
+                            />
+                          ) : (
+                            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-100 dark:bg-green-800">
+                              <span className="text-lg text-green-700 dark:text-green-300">
+                                {booking.guardianId.name.charAt(0).toUpperCase()}
+                              </span>
+                            </div>
+                          )}
+                          <div>
+                            <p className="font-semibold">{booking.guardianId.name}</p>
+                            <Badge className="bg-green-500 text-white">
+                              Completed
+                            </Badge>
+                            <p className="mt-1 text-xs text-text-muted">
+                              Completed on {new Date(booking.createdAt).toLocaleDateString()}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          {(booking.guardianId as any)._id && (
+                            <Link href={`/vital/guardians/${(booking.guardianId as any)._id}`}>
+                              <Button size="sm" variant="outline" className="whitespace-nowrap">
+                                Book Again
+                              </Button>
+                            </Link>
+                          )}
+                          <Link href={`/vital/reviews/create/${booking._id}`}>
+                            <Button size="sm" className="bg-green-500 hover:bg-green-600">
+                              Leave Review
+                            </Button>
+                          </Link>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </CardContent>
           </Card>

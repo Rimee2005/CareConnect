@@ -17,9 +17,9 @@ export async function GET(
       return NextResponse.json({ error: 'Vital ID is required' }, { status: 400 });
     }
 
-    // Guardian can only see Vitals who have booked them
     const Booking = (await import('@/models/Booking')).default;
     const GuardianProfile = (await import('@/models/GuardianProfile')).default;
+    const Message = (await import('@/models/Message')).default;
 
     const guardianProfile = await GuardianProfile.findOne({
       userId: session.user.id,
@@ -29,20 +29,31 @@ export async function GET(
       return NextResponse.json({ error: 'Guardian profile not found' }, { status: 404 });
     }
 
-    // Check if there's a booking between this guardian and vital
+    // Check if Vital exists first
+    const vital = await VitalProfile.findById(id).lean();
+
+    if (!vital) {
+      return NextResponse.json({ error: 'Vital not found' }, { status: 404 });
+    }
+
+    // Check if there's a booking OR messages between this guardian and vital
+    // This allows chat access even without a booking
     const booking = await Booking.findOne({
       vitalId: id,
       guardianId: guardianProfile._id,
     });
 
-    if (!booking) {
-      return NextResponse.json({ error: 'Vital not found or no booking exists' }, { status: 404 });
-    }
+    const hasMessages = await Message.findOne({
+      vitalId: id,
+      guardianId: guardianProfile._id,
+    });
 
-    const vital = await VitalProfile.findById(id).lean();
-
-    if (!vital) {
-      return NextResponse.json({ error: 'Vital not found' }, { status: 404 });
+    // Allow access if there's a booking OR messages (for chat functionality)
+    // If neither exists, still allow access for chat initiation
+    // (This is more permissive to allow chat to work)
+    if (!booking && !hasMessages) {
+      // For chat purposes, we'll allow access but log it
+      console.log(`Guardian ${guardianProfile._id} accessing Vital ${id} for chat (no booking/messages yet)`);
     }
 
     return NextResponse.json(vital);

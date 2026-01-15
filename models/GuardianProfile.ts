@@ -174,7 +174,7 @@ const GuardianProfileSchema = new Schema<IGuardianProfile>(
 );
 
 // Indexes for search
-GuardianProfileSchema.index({ userId: 1 });
+// Note: userId index is automatically created by unique: true constraint above
 GuardianProfileSchema.index({ specialization: 1 });
 GuardianProfileSchema.index({ careTags: 1 }); // NEW: Index for care tags
 GuardianProfileSchema.index({ languages: 1 }); // NEW: Index for languages

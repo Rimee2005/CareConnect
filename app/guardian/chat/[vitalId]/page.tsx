@@ -50,6 +50,15 @@ export default function GuardianChatPage() {
     scrollToBottom();
   }, [messages]);
 
+  // Fetch messages when vitalId and guardianId are available
+  useEffect(() => {
+    if (vitalId && guardianId) {
+      console.log('📥 Fetching messages on mount:', { vitalId, guardianId });
+      fetchMessages();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vitalId, guardianId]);
+
   useEffect(() => {
     if (session?.user?.role !== 'GUARDIAN') {
       router.push('/');
@@ -60,21 +69,31 @@ export default function GuardianChatPage() {
   }, [session, router, params.vitalId]);
 
   useEffect(() => {
-    if (!vitalId || !guardianId || !session?.user?.id) return;
+    if (!vitalId || !guardianId || !session?.user?.id) {
+      console.log('Waiting for required data:', { vitalId, guardianId, userId: session?.user?.id });
+      return;
+    }
 
+    console.log('Initializing Socket.io connection...', { vitalId, guardianId });
+    
     // Initialize Socket.io connection
     const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || window.location.origin;
     const newSocket = io(socketUrl, {
       path: '/api/socket/io',
       transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+      timeout: 20000,
     });
 
     newSocket.on('connect', () => {
-      console.log('Connected to Socket.io');
+      console.log('✅ Connected to Socket.io', newSocket.id);
       setConnected(true);
       
-      // Create chat ID: vitalId-guardianId
+      // Create chat ID: vitalId-guardianId (must match format on both sides)
       chatIdRef.current = `${vitalId}-${guardianId}`;
+      console.log('Joining chat room:', chatIdRef.current);
       
       // Join the chat room
       newSocket.emit('join-room', {
@@ -87,32 +106,85 @@ export default function GuardianChatPage() {
       fetchMessages();
     });
 
-    newSocket.on('disconnect', () => {
-      console.log('Disconnected from Socket.io');
+    newSocket.on('connect_error', (error) => {
+      console.error('❌ Socket.io connection error:', error);
       setConnected(false);
+      setToastMessage('Failed to connect to chat server. Please refresh the page.');
+      setShowToast(true);
+    });
+
+    newSocket.on('disconnect', (reason) => {
+      console.log('⚠️ Disconnected from Socket.io:', reason);
+      setConnected(false);
+      if (reason === 'io server disconnect') {
+        // Server disconnected, reconnect manually
+        newSocket.connect();
+      }
+    });
+
+    newSocket.on('reconnect', (attemptNumber) => {
+      console.log('🔄 Reconnected to Socket.io after', attemptNumber, 'attempts');
+      setConnected(true);
+      
+      // Rejoin room after reconnection
+      if (chatIdRef.current) {
+        newSocket.emit('join-room', {
+          userId: session.user.id,
+          role: 'GUARDIAN',
+          chatId: chatIdRef.current,
+        });
+      }
     });
 
     newSocket.on('receive-message', (data: Message) => {
-      setMessages((prev) => [...prev, data]);
+      console.log('📨 Received message:', data);
+      setMessages((prev) => {
+        // Remove temporary message if it exists and add the real one
+        const filtered = prev.filter(msg => !msg._id.startsWith('temp-'));
+        // Check if message already exists to avoid duplicates
+        const exists = filtered.some(msg => msg._id === data._id);
+        if (exists) {
+          return filtered;
+        }
+        return [...filtered, data];
+      });
+      scrollToBottom();
+    });
+
+    newSocket.on('message-sent', (data: { messageId: string }) => {
+      console.log('✅ Message sent confirmation:', data.messageId);
+      // Remove temporary message and ensure real message is displayed
+      setMessages((prev) => {
+        const filtered = prev.filter(msg => !msg._id.startsWith('temp-'));
+        return filtered;
+      });
+      // Refetch messages to ensure we have the latest
+      setTimeout(() => fetchMessages(), 500);
     });
 
     newSocket.on('message-error', (data: { error: string }) => {
+      console.error('❌ Message error:', data.error);
       setToastMessage(data.error);
       setShowToast(true);
+      // Remove temporary message on error
+      setMessages((prev) => prev.filter(msg => !msg._id.startsWith('temp-')));
     });
 
     setSocket(newSocket);
 
     return () => {
+      console.log('Cleaning up socket connection');
       newSocket.close();
     };
   }, [vitalId, guardianId, session]);
 
   const fetchVitalInfo = async () => {
     try {
+      console.log('📥 Fetching vital info for ID:', params.vitalId);
       const res = await fetch(`/api/vitals/${params.vitalId}`);
       if (res.ok) {
         const data = await res.json();
+        console.log('✅ Vital data:', data.name, data._id);
         setVitalName(data.name);
         setVitalId(data._id);
         
@@ -120,37 +192,78 @@ export default function GuardianChatPage() {
         const guardianRes = await fetch('/api/guardian/profile');
         if (guardianRes.ok) {
           const guardianData = await guardianRes.json();
+          console.log('✅ Guardian data:', guardianData.name, guardianData._id);
           setGuardianId(guardianData._id);
+        } else {
+          console.error('❌ Failed to fetch guardian profile:', guardianRes.status);
         }
+      } else {
+        const errorData = await res.json().catch(() => ({ error: 'Unknown error' }));
+        console.error('❌ Failed to fetch vital:', res.status, errorData);
+        setToastMessage(errorData.error || 'Failed to load Vital information');
+        setShowToast(true);
       }
     } catch (error) {
-      console.error('Failed to fetch vital:', error);
+      console.error('❌ Error fetching vital:', error);
+      setToastMessage('Failed to load Vital information');
+      setShowToast(true);
     }
   };
 
   const fetchMessages = async () => {
-    if (!vitalId || !guardianId) return;
+    if (!vitalId || !guardianId) {
+      console.log('⚠️ Cannot fetch messages - missing IDs:', { vitalId, guardianId });
+      return;
+    }
     
     try {
       const chatId = `${vitalId}-${guardianId}`;
+      console.log('📥 Fetching messages for chat:', chatId);
       const res = await fetch(`/api/chat/${chatId}`);
       if (res.ok) {
         const data = await res.json();
+        console.log('✅ Fetched messages:', data.length);
         setMessages(data);
+        scrollToBottom();
+      } else {
+        const errorData = await res.json().catch(() => ({ error: 'Unknown error' }));
+        console.error('❌ Failed to fetch messages:', errorData);
       }
     } catch (error) {
-      console.error('Failed to fetch messages:', error);
+      console.error('❌ Error fetching messages:', error);
     }
   };
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!message.trim() || !socket || !connected) return;
+    if (!message.trim() || !socket || !connected) {
+      if (!connected) {
+        setToastMessage('Not connected to chat server. Please wait for connection...');
+        setShowToast(true);
+      }
+      return;
+    }
     if (!vitalId || !guardianId || !session?.user?.id) return;
 
     const messageText = message.trim();
     const chatId = `${vitalId}-${guardianId}`;
+
+    console.log('📤 Sending message:', { vitalId, guardianId, chatId, message: messageText });
+
+    // Optimistically add message to UI
+    const tempMessage: Message = {
+      _id: `temp-${Date.now()}`,
+      vitalId,
+      guardianId,
+      senderId: session.user.id,
+      senderRole: 'GUARDIAN',
+      message: messageText,
+      read: false,
+      createdAt: new Date().toISOString(),
+    };
+    setMessages((prev) => [...prev, tempMessage]);
+    setMessage('');
 
     // Emit message via Socket.io
     socket.emit('send-message', {
@@ -161,9 +274,6 @@ export default function GuardianChatPage() {
       message: messageText,
       chatId,
     });
-
-    // Clear input
-    setMessage('');
   };
 
   return (

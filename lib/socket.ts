@@ -92,17 +92,42 @@ export function initSocketIO(server: HTTPServer) {
 
         const roomName = `chat-${data.chatId}`;
         
-        // Emit to all clients in the room
-        io?.to(roomName).emit('receive-message', {
+        // Get sender name for the message
+        let senderName = '';
+        if (data.senderRole === 'VITAL') {
+          const vital = await VitalProfile.findById(data.vitalId);
+          senderName = vital?.name || 'Vital';
+        } else {
+          const guardian = await GuardianProfile.findById(data.guardianId);
+          senderName = guardian?.name || 'Guardian';
+        }
+        
+        const messageData = {
           _id: savedMessage._id.toString(),
           vitalId: data.vitalId,
           guardianId: data.guardianId,
           senderId: data.senderId,
           senderRole: data.senderRole,
+          senderName,
           message: data.message,
           read: false,
-          createdAt: savedMessage.createdAt,
-        });
+          createdAt: savedMessage.createdAt.toISOString(),
+        };
+        
+        console.log(`📤 Broadcasting message to room ${roomName}:`, messageData);
+        
+        // Get list of clients in the room for debugging
+        const room = io?.sockets.adapter.rooms.get(roomName);
+        const clientsInRoom = room ? Array.from(room).length : 0;
+        console.log(`👥 Clients in room ${roomName}: ${clientsInRoom}`);
+        
+        // Emit to all clients in the room
+        io?.to(roomName).emit('receive-message', messageData);
+        
+        // Also send confirmation back to sender
+        socket.emit('message-sent', { messageId: savedMessage._id.toString() });
+        
+        console.log(`✅ Message broadcasted to room ${roomName} (${clientsInRoom} clients)`);
 
         // Create notification for the recipient
         let recipientUserId;

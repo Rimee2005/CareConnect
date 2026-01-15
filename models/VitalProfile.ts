@@ -80,7 +80,7 @@ const VitalProfileSchema = new Schema<IVitalProfile>(
 );
 
 // Indexes for location-based search
-VitalProfileSchema.index({ userId: 1 });
+// Note: userId index is automatically created by unique: true constraint above
 VitalProfileSchema.index({ 'location.city': 1 });
 VitalProfileSchema.index({ 'location.coordinates': '2dsphere' });
 

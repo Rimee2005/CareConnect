@@ -153,7 +153,11 @@ export default function VitalDashboardPage() {
                   <p className="text-sm text-text-muted">Age: {profile.age}</p>
                 </div>
               </div>
-              <Button variant="outline" className="mt-4 w-full">
+              <Button 
+                variant="outline" 
+                className="mt-4 w-full"
+                onClick={() => router.push('/vital/profile/create')}
+              >
                 Edit Profile
               </Button>
             </CardContent>

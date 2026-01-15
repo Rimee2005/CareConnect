@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { useForm, useFieldArray } from 'react-hook-form';
@@ -16,7 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { Navbar } from '@/components/Navbar';
 import { useTranslation } from '@/lib/i18n';
 import { featureFlags } from '@/lib/feature-flags';
-import { Upload, X, Plus, CheckCircle2, Calendar, Globe, Clock, Check } from 'lucide-react';
+import { Upload, X, Plus, CheckCircle2, Calendar, Globe, Clock, Check, Loader2 } from 'lucide-react';
 
 // Care type tags options
 const CARE_TAGS = [
@@ -77,16 +77,52 @@ const guardianProfileSchema = z.object({
 
 type GuardianProfileForm = z.infer<typeof guardianProfileSchema>;
 
+interface GuardianProfile {
+  _id: string;
+  name: string;
+  age: number;
+  gender: string;
+  experience: number;
+  introduction?: string;
+  careTags?: string[];
+  experienceBreakdown?: Array<{ years: number; type: string }>;
+  specialization: string[];
+  serviceRadius: number;
+  availability: {
+    days: string[];
+    hours: {
+      start: string;
+      end: string;
+    };
+    shiftType?: 'Morning' | 'Night' | '24×7';
+  };
+  languages?: string[];
+  location: {
+    city: string;
+  };
+  certifications?: string[];
+  profilePhoto?: string;
+  pricing?: {
+    hourly?: number;
+    daily?: number;
+    monthly?: number;
+    priceBreakdown?: string;
+  };
+}
+
 export default function CreateGuardianProfilePage() {
   const router = useRouter();
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const { t } = useTranslation();
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string>('');
   const [certFiles, setCertFiles] = useState<File[]>([]);
   const [certPreviews, setCertPreviews] = useState<string[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [profile, setProfile] = useState<GuardianProfile | null>(null);
+  const [isCreateMode, setIsCreateMode] = useState(false);
   const [selectedCareTags, setSelectedCareTags] = useState<string[]>([]);
   const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
 
@@ -97,6 +133,7 @@ export default function CreateGuardianProfilePage() {
     formState: { errors },
     watch,
     setValue,
+    reset,
   } = useForm<GuardianProfileForm>({
     resolver: zodResolver(guardianProfileSchema),
     defaultValues: {
@@ -110,6 +147,102 @@ export default function CreateGuardianProfilePage() {
     control,
     name: 'experienceBreakdown',
   });
+
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/auth/login');
+      return;
+    }
+
+    if (status === 'authenticated' && session?.user?.role === 'GUARDIAN') {
+      fetchProfile();
+    }
+  }, [session, status, router]);
+
+  const fetchProfile = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      const res = await fetch('/api/guardian/profile');
+      
+      if (res.ok) {
+        const data = await res.json();
+        setProfile(data);
+        setIsCreateMode(false);
+        
+        // Populate form with existing data
+        reset({
+          name: data.name,
+          age: data.age,
+          gender: data.gender,
+          experience: data.experience,
+          introduction: data.introduction || '',
+          specialization: data.specialization?.join(', ') || '',
+          serviceRadius: data.serviceRadius,
+          availabilityDays: data.availability?.days?.join(', ') || '',
+          availabilityStart: data.availability?.hours?.start || '',
+          availabilityEnd: data.availability?.hours?.end || '',
+          shiftType: data.availability?.shiftType,
+          city: data.location?.city || '',
+          pricingHourly: data.pricing?.hourly,
+          pricingDaily: data.pricing?.daily,
+          pricingMonthly: data.pricing?.monthly,
+          pricingBreakdown: data.pricing?.priceBreakdown || '',
+          experienceBreakdown: data.experienceBreakdown || [],
+          careTags: data.careTags || [],
+          languages: data.languages || [],
+        });
+        
+        // Set selected tags and languages
+        setSelectedCareTags(data.careTags || []);
+        setSelectedLanguages(data.languages || []);
+        
+        // Set photo preview if profilePhoto exists
+        if (data.profilePhoto && data.profilePhoto.trim() !== '') {
+          setPhotoPreview(data.profilePhoto);
+        } else {
+          setPhotoPreview('');
+        }
+        
+        // Set certification previews
+        if (data.certifications && data.certifications.length > 0) {
+          setCertPreviews(data.certifications);
+        }
+      } else if (res.status === 404) {
+        // Profile doesn't exist - show create mode
+        setProfile(null);
+        setIsCreateMode(true);
+        reset({
+          experienceBreakdown: [],
+          careTags: [],
+          languages: [],
+        });
+        setPhotoPreview('');
+        setPhotoFile(null);
+        setSelectedCareTags([]);
+        setSelectedLanguages([]);
+      } else {
+        const errorData = await res.json().catch(() => ({ error: 'Failed to load profile' }));
+        setError(errorData.error || 'Failed to load profile');
+        setIsCreateMode(true);
+        setPhotoPreview('');
+        setPhotoFile(null);
+      }
+    } catch (error) {
+      console.error('Failed to fetch profile:', error);
+      setError('Failed to load profile. You can still create your profile below.');
+      setIsCreateMode(true);
+      reset({
+        experienceBreakdown: [],
+        careTags: [],
+        languages: [],
+      });
+      setPhotoPreview('');
+      setPhotoFile(null);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -153,7 +286,7 @@ export default function CreateGuardianProfilePage() {
       return;
     }
 
-    setLoading(true);
+    setSaving(true);
     setError('');
 
     try {
@@ -172,6 +305,9 @@ export default function CreateGuardianProfilePage() {
         if (uploadData.url) {
           profilePhoto = uploadData.url;
         }
+      } else if (!isCreateMode && profile?.profilePhoto) {
+        // In edit mode, preserve existing photo if no new one is uploaded
+        profilePhoto = profile.profilePhoto;
       }
 
       // Upload certifications
@@ -186,6 +322,11 @@ export default function CreateGuardianProfilePage() {
         if (uploadData.url) {
           certifications.push(uploadData.url);
         }
+      }
+      
+      // In edit mode, preserve existing certifications if no new ones are uploaded
+      if (!isCreateMode && profile?.certifications && certFiles.length === 0) {
+        certifications.push(...profile.certifications);
       }
 
       // Create profile
@@ -209,9 +350,17 @@ export default function CreateGuardianProfilePage() {
         location: {
           city: data.city,
         },
-        certifications,
-        profilePhoto,
       };
+      
+      // Only include profilePhoto if we have one (new or existing)
+      if (profilePhoto) {
+        profileData.profilePhoto = profilePhoto;
+      }
+      
+      // Only include certifications if we have any
+      if (certifications.length > 0) {
+        profileData.certifications = certifications;
+      }
 
       // Add new fields if feature flag is enabled
       if (featureFlags.ADVANCED_GUARDIAN_PROFILE) {
@@ -244,8 +393,9 @@ export default function CreateGuardianProfilePage() {
         }
       }
 
+      const method = isCreateMode ? 'POST' : 'PUT';
       const res = await fetch('/api/guardian/profile', {
-        method: 'POST',
+        method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(profileData),
       });
@@ -253,17 +403,42 @@ export default function CreateGuardianProfilePage() {
       const result = await res.json();
 
       if (!res.ok) {
-        setError(result.error || 'Failed to create profile');
+        // If profile already exists error, switch to edit mode and refetch
+        if (res.status === 400 && result.error?.includes('already exists')) {
+          setError('Profile already exists. Switching to edit mode...');
+          setIsCreateMode(false);
+          await fetchProfile();
+          return;
+        }
+        setError(result.error || `Failed to ${isCreateMode ? 'create' : 'update'} profile`);
         return;
       }
 
+      // Success - refresh profile data and show success message
+      await fetchProfile();
+      setError('');
       router.push('/guardian/dashboard');
     } catch (err) {
       setError('An error occurred. Please try again.');
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
+
+  if (status === 'loading' || loading) {
+    return (
+      <div className="min-h-screen bg-background dark:bg-background-dark transition-colors">
+        <Navbar />
+        <div className="container mx-auto px-4 py-8">
+          <Card className="mx-auto max-w-3xl">
+            <CardContent className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-primary dark:text-primary-dark-mode" />
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   if (!session) {
     return null;
@@ -276,13 +451,22 @@ export default function CreateGuardianProfilePage() {
         <Card className="mx-auto max-w-3xl">
           <CardHeader>
             <CardTitle className="text-text dark:text-text-dark transition-colors">
-              {t('form.create')}
+              {isCreateMode ? t('form.create') : 'Edit Profile'}
             </CardTitle>
             <CardDescription className="text-text-light dark:text-text-dark-light transition-colors">
-              Tell us about your experience and availability to start receiving bookings
+              {isCreateMode 
+                ? 'Tell us about your experience and availability to start receiving bookings'
+                : 'Update your profile information'}
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {error && (
+              <div className="mb-4 rounded-lg border border-error/30 bg-error/10 p-3">
+                <p className="text-sm font-medium text-error dark:text-error transition-colors">
+                  {error}
+                </p>
+              </div>
+            )}
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               {/* Profile Photo */}
               <div className="space-y-2">
@@ -815,14 +999,15 @@ export default function CreateGuardianProfilePage() {
                 </label>
               </div>
 
-              {error && (
-                <p className="text-sm font-medium text-error dark:text-error transition-colors">
-                  {error}
-                </p>
-              )}
-
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? t('common.loading') : t('form.create')}
+              <Button type="submit" className="w-full" disabled={saving || loading}>
+                {saving ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {isCreateMode ? 'Creating...' : 'Saving...'}
+                  </>
+                ) : (
+                  isCreateMode ? t('form.create') : 'Save Changes'
+                )}
               </Button>
             </form>
           </CardContent>

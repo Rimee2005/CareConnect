@@ -232,7 +232,11 @@ export default function GuardianDashboardPage() {
                   <p className="text-sm text-text-muted dark:text-text-dark-muted transition-colors">{profile.experience} years experience</p>
                 </div>
               </div>
-              <Button variant="outline" className="mt-4 w-full">
+              <Button 
+                variant="outline" 
+                className="mt-4 w-full"
+                onClick={() => router.push('/guardian/profile/create')}
+              >
                 Edit Profile
               </Button>
             </CardContent>

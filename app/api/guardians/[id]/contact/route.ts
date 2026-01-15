@@ -52,10 +52,9 @@ export async function GET(
     }
 
     // Return contact information
+    // Note: phoneNumber is not stored in GuardianProfile, only email is available
     return NextResponse.json({
       email: guardianUser.email,
-      // Note: phoneNumber field doesn't exist in GuardianProfile model
-      // If needed, add it to the model or use a different field
     });
   } catch (error: any) {
     if (error.message === 'Unauthorized' || error.message.includes('Forbidden')) {

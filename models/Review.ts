@@ -55,8 +55,8 @@ ReviewSchema.pre(['updateOne', 'findOneAndUpdate', 'updateMany'], function () {
 });
 
 // Indexes
+// Note: bookingId index is automatically created by unique: true constraint above
 ReviewSchema.index({ guardianId: 1 });
-ReviewSchema.index({ bookingId: 1 });
 ReviewSchema.index({ createdAt: -1 });
 
 const Review: Model<IReview> =

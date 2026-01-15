@@ -4,6 +4,7 @@ import connectDB from '@/lib/db';
 import Review from '@/models/Review';
 import GuardianProfile from '@/models/GuardianProfile';
 import VitalProfile from '@/models/VitalProfile';
+import mongoose from 'mongoose';
 
 export async function GET() {
   try {
@@ -27,20 +28,34 @@ export async function GET() {
 
     // Format reviews for frontend
     const formattedReviews = reviews.map((review) => {
-      const vitalId = typeof review.vitalId === 'object' && review.vitalId !== null && '_id' in review.vitalId
-        ? review.vitalId as { _id: any; name?: string; profilePhoto?: string }
-        : null;
+      // Handle populated vitalId - TypeScript doesn't know it's populated with .lean()
+      const vitalId = review.vitalId as unknown as mongoose.Types.ObjectId | { _id: mongoose.Types.ObjectId; name: string; profilePhoto?: string };
       
+      let vitalData: { _id: string; name: string; profilePhoto?: string };
+      
+      // Check if vitalId is populated (has name property) or just an ObjectId
+      if (vitalId && typeof vitalId === 'object' && 'name' in vitalId) {
+        // It's populated
+        vitalData = {
+          _id: vitalId._id.toString(),
+          name: vitalId.name || 'Unknown',
+          profilePhoto: vitalId.profilePhoto || undefined,
+        };
+      } else {
+        // It's just an ObjectId - fetch the vital profile separately
+        vitalData = {
+          _id: (vitalId as mongoose.Types.ObjectId).toString(),
+          name: 'Unknown',
+          profilePhoto: undefined,
+        };
+      }
+
       return {
         ...review,
         _id: review._id.toString(),
         bookingId: review.bookingId.toString(),
-        vitalId: vitalId ? {
-          _id: vitalId._id.toString(),
-          name: vitalId.name || '',
-          profilePhoto: vitalId.profilePhoto || '',
-        } : { _id: '', name: '', profilePhoto: '' },
-        reviewText: review.reviewText || '',
+        vitalId: vitalData,
+        reviewText: review.reviewText || undefined,
         createdAt: review.createdAt,
       };
     });

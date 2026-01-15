@@ -20,7 +20,7 @@ export async function GET(
     const formattedReviews = reviews.map((review) => ({
       ...review,
       _id: review._id.toString(),
-      reviewText: review.reviewText || '',
+      reviewText: review.reviewText || undefined,
     }));
 
     return NextResponse.json(formattedReviews);

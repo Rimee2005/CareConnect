@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useEffect, useState, useMemo, Suspense } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
@@ -75,7 +75,7 @@ interface Guardian {
   };
 }
 
-export default function GuardiansPage() {
+function GuardiansPageContent() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -1203,5 +1203,22 @@ export default function GuardiansPage() {
         ))}
       </div>
     </div>
+  );
+}
+
+export default function GuardiansPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-background dark:bg-background-dark transition-colors">
+        <VitalNavbar />
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex items-center justify-center min-h-[60vh]">
+            <p className="text-text dark:text-text-dark transition-colors">Loading...</p>
+          </div>
+        </div>
+      </div>
+    }>
+      <GuardiansPageContent />
+    </Suspense>
   );
 }

@@ -166,7 +166,7 @@ export default function GuardianDetailPage() {
       setShowToast(true);
       setBookingNotes('');
     } catch (error) {
-      setToastMessage('An error occurred. Please try again.');
+      setToastMessage(t('error.generic'));
       setShowToast(true);
     }
   };
@@ -180,7 +180,7 @@ export default function GuardianDetailPage() {
       if (vitalRes.ok) {
         router.push(`/vital/chat/${params.id}`);
       } else {
-        setToastMessage('Please create your profile first');
+        setToastMessage(t('dashboard.guardian.profileNotCreated'));
         setShowToast(true);
       }
     } catch (error) {

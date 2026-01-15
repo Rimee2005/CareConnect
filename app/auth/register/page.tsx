@@ -34,12 +34,12 @@ function RegisterForm() {
     setError('');
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match');
+      setError(t('error.passwordsNotMatch'));
       return;
     }
 
     if (password.length < 6) {
-      setError('Password must be at least 6 characters');
+      setError(t('error.passwordTooShort'));
       return;
     }
 
@@ -90,7 +90,7 @@ function RegisterForm() {
         window.location.href = `/${role.toLowerCase()}/dashboard`;
       }
     } catch (err) {
-      setError('An error occurred. Please try again.');
+      setError(t('error.generic'));
     } finally {
       setLoading(false);
     }
@@ -102,13 +102,13 @@ function RegisterForm() {
       <div className="container mx-auto flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-8 sm:py-12">
         <Card className="w-full max-w-md">
           <CardHeader className="px-4 sm:px-6">
-            <CardTitle className="text-xl sm:text-2xl text-text dark:text-text-dark transition-colors">{t('nav.register')}</CardTitle>
-            <CardDescription className="text-sm sm:text-base text-text-light dark:text-text-dark-light transition-colors">Create your CareConnect account</CardDescription>
+            <CardTitle className="text-xl sm:text-2xl text-text dark:text-text-dark transition-colors">{t('auth.register.title')}</CardTitle>
+            <CardDescription className="text-sm sm:text-base text-text-light dark:text-text-dark-light transition-colors">{t('auth.register.description')}</CardDescription>
           </CardHeader>
           <CardContent className="px-4 sm:px-6">
             <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="role" className="text-sm sm:text-base">I am a</Label>
+                <Label htmlFor="role" className="text-sm sm:text-base">{t('auth.register.iAmA')}</Label>
                 <div className="flex gap-2 sm:gap-3">
                   <Button
                     type="button"
@@ -129,35 +129,38 @@ function RegisterForm() {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">{t('form.email')}</Label>
                 <Input
                   id="email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  placeholder={t('form.email.placeholder')}
                   required
                   aria-required="true"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">{t('form.password')}</Label>
                 <Input
                   id="password"
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  placeholder={t('form.password.placeholder')}
                   required
                   aria-required="true"
                   minLength={6}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                <Label htmlFor="confirmPassword">{t('form.confirmPassword')}</Label>
                 <Input
                   id="confirmPassword"
                   type="password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder={t('form.confirmPassword.placeholder')}
                   required
                   aria-required="true"
                 />
@@ -168,7 +171,7 @@ function RegisterForm() {
               </Button>
             </form>
             <p className="mt-4 text-center text-sm text-text-muted dark:text-text-dark-muted transition-colors">
-              Already have an account?{' '}
+              {t('auth.register.alreadyHaveAccount')}{' '}
               <Link href="/auth/login" className="text-primary hover:underline dark:text-primary-dark-mode dark:hover:text-primary-dark-mode-hover transition-colors">
                 {t('nav.login')}
               </Link>

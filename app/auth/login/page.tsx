@@ -62,7 +62,7 @@ function LoginForm() {
         window.location.href = '/';
       }
     } catch (err) {
-      setError('An error occurred. Please try again.');
+      setError(t('error.generic'));
       setLoading(false);
     }
   };
@@ -73,29 +73,31 @@ function LoginForm() {
       <div className="container mx-auto flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-8 sm:py-12">
         <Card className="w-full max-w-md">
           <CardHeader className="px-4 sm:px-6">
-            <CardTitle className="text-xl sm:text-2xl text-text dark:text-text-dark transition-colors">{t('nav.login')}</CardTitle>
-            <CardDescription className="text-sm sm:text-base text-text-light dark:text-text-dark-light transition-colors">Enter your credentials to access your account</CardDescription>
+            <CardTitle className="text-xl sm:text-2xl text-text dark:text-text-dark transition-colors">{t('auth.login.title')}</CardTitle>
+            <CardDescription className="text-sm sm:text-base text-text-light dark:text-text-dark-light transition-colors">{t('auth.login.description')}</CardDescription>
           </CardHeader>
           <CardContent className="px-4 sm:px-6">
             <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">{t('form.email')}</Label>
                 <Input
                   id="email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  placeholder={t('form.email.placeholder')}
                   required
                   aria-required="true"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">{t('form.password')}</Label>
                 <Input
                   id="password"
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  placeholder={t('form.password.placeholder')}
                   required
                   aria-required="true"
                 />
@@ -106,7 +108,7 @@ function LoginForm() {
               </Button>
             </form>
             <p className="mt-4 text-center text-sm text-text-muted dark:text-text-dark-muted transition-colors">
-              Don't have an account?{' '}
+              {t('auth.login.dontHaveAccount')}{' '}
               <Link href="/auth/register" className="text-primary hover:underline dark:text-primary-dark-mode dark:hover:text-primary-dark-mode-hover transition-colors">
                 {t('nav.register')}
               </Link>

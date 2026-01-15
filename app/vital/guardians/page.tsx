@@ -378,14 +378,14 @@ function GuardiansPageContent() {
         <Link href="/vital/dashboard">
           <Button variant="ghost" className="mb-6 text-sm sm:text-base">
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Dashboard
+            {t('guardians.backToDashboard')}
           </Button>
         </Link>
 
         {/* Header */}
         <div className="mb-6 sm:mb-8">
           <h1 className="mb-4 text-2xl font-bold text-text sm:text-3xl dark:text-text-dark transition-colors">
-            {activeTab === 'saved' ? 'Saved Guardians' : t('vital.browse')}
+            {activeTab === 'saved' ? t('guardians.savedGuardians') : t('vital.browse')}
           </h1>
           
           {/* Tabs */}
@@ -398,7 +398,7 @@ function GuardiansPageContent() {
                   : 'border-transparent text-text-muted dark:text-text-dark-muted hover:text-text dark:hover:text-text-dark'
               }`}
             >
-              All Guardians ({guardians.length})
+              {t('guardians.allGuardians')} ({guardians.length})
             </button>
             <button
               onClick={() => setActiveTab('saved')}
@@ -408,7 +408,7 @@ function GuardiansPageContent() {
                   : 'border-transparent text-text-muted dark:text-text-dark-muted hover:text-text dark:hover:text-text-dark'
               }`}
             >
-              Saved ({savedGuardianIds.size})
+              {t('guardians.saved')} ({savedGuardianIds.size})
             </button>
           </div>
 
@@ -417,7 +417,7 @@ function GuardiansPageContent() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted sm:h-5 sm:w-5" />
               <Input
-                placeholder="Search by name or specialization..."
+                placeholder={t('guardians.search.placeholder')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-9 text-sm sm:pl-10 sm:text-base"
@@ -429,7 +429,7 @@ function GuardiansPageContent() {
               className="flex items-center gap-2"
             >
               <SlidersHorizontal className="h-4 w-4" />
-              Filters
+              {t('guardians.filters')}
               {hasActiveFilters && (
                 <Badge variant="default" className="ml-1 h-5 w-5 rounded-full p-0 text-xs">
                   {[
@@ -447,7 +447,7 @@ function GuardiansPageContent() {
           {/* Applied Filter Chips */}
           {hasActiveFilters && (
             <div className="mt-4 flex flex-wrap items-center gap-2">
-              <span className="text-sm font-medium text-text-muted dark:text-text-dark-muted">Active filters:</span>
+              <span className="text-sm font-medium text-text-muted dark:text-text-dark-muted">{t('guardians.activeFilters')}:</span>
               {selectedSpecializations.map((spec) => (
                 <Badge
                   key={spec}
@@ -486,7 +486,7 @@ function GuardiansPageContent() {
                   className="flex items-center gap-1 cursor-pointer hover:bg-background-secondary dark:hover:bg-background-dark-secondary"
                   onClick={() => setExperienceRange([0, 50])}
                 >
-                  Experience: {experienceRange[0]}-{experienceRange[1]} years
+                  {t('guardians.experience')}: {experienceRange[0]}-{experienceRange[1]} {t('guardians.years')}
                   <X className="h-3 w-3" />
                 </Badge>
               )}
@@ -496,7 +496,7 @@ function GuardiansPageContent() {
                   className="flex items-center gap-1 cursor-pointer hover:bg-background-secondary dark:hover:bg-background-dark-secondary"
                   onClick={() => setDistanceRange([0, 100])}
                 >
-                  Radius: {distanceRange[0]}-{distanceRange[1]} km
+                  {t('guardians.serviceRadius')}: {distanceRange[0]}-{distanceRange[1]} {t('guardians.km')}
                   <X className="h-3 w-3" />
                 </Badge>
               )}
@@ -506,7 +506,7 @@ function GuardiansPageContent() {
                 onClick={clearAllFilters}
                 className="h-6 text-xs"
               >
-                Clear All
+                {t('guardians.clearAll')}
               </Button>
             </div>
           )}
@@ -519,7 +519,7 @@ function GuardiansPageContent() {
             <Card className="relative z-10 w-full max-h-[85vh] overflow-y-auto rounded-t-xl border-b-0 animate-in slide-in-from-bottom duration-300">
               <CardContent className="p-4 sm:p-6">
                 <div className="mb-4 flex items-center justify-between border-b border-border dark:border-border-dark pb-4">
-                  <h3 className="text-lg font-semibold text-text dark:text-text-dark">Filters</h3>
+                  <h3 className="text-lg font-semibold text-text dark:text-text-dark">{t('guardians.filters')}</h3>
                   <div className="flex items-center gap-2">
                     {hasActiveFilters && (
                       <Button
@@ -528,7 +528,7 @@ function GuardiansPageContent() {
                         onClick={clearAllFilters}
                         className="text-xs"
                       >
-                        Clear All
+                        {t('guardians.clearAll')}
                       </Button>
                     )}
                     <Button
@@ -545,7 +545,7 @@ function GuardiansPageContent() {
                   {/* Mobile Filter Content - same as desktop but stacked */}
                   {/* Specialization Filter */}
                   <div className="space-y-3">
-                    <Label className="text-sm font-semibold text-text dark:text-text-dark">Specialization</Label>
+                    <Label className="text-sm font-semibold text-text dark:text-text-dark">{t('guardians.specialization')}</Label>
                     <div className="max-h-40 space-y-2 overflow-y-auto rounded-md border border-border dark:border-border-dark p-3 bg-background-secondary dark:bg-background-dark-secondary">
                       {allSpecializations.map((spec) => (
                         <label key={spec} className="flex items-center gap-2 cursor-pointer hover:bg-background dark:hover:bg-background-dark p-1 rounded">
@@ -569,9 +569,17 @@ function GuardiansPageContent() {
 
                   {/* Availability Days Filter */}
                   <div className="space-y-3">
-                    <Label className="text-sm font-semibold text-text dark:text-text-dark">Available Days</Label>
+                    <Label className="text-sm font-semibold text-text dark:text-text-dark">{t('guardians.availableDays')}</Label>
                     <div className="space-y-2 rounded-md border border-border dark:border-border-dark p-3 bg-background-secondary dark:bg-background-dark-secondary">
-                      {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day) => (
+                      {[
+                        { en: 'Monday', key: 'monday' },
+                        { en: 'Tuesday', key: 'tuesday' },
+                        { en: 'Wednesday', key: 'wednesday' },
+                        { en: 'Thursday', key: 'thursday' },
+                        { en: 'Friday', key: 'friday' },
+                        { en: 'Saturday', key: 'saturday' },
+                        { en: 'Sunday', key: 'sunday' }
+                      ].map(({ en: day, key }) => (
                         <label key={day} className="flex items-center gap-2 cursor-pointer hover:bg-background dark:hover:bg-background-dark p-1 rounded">
                           <input
                             type="checkbox"
@@ -585,7 +593,7 @@ function GuardiansPageContent() {
                             }}
                             className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary dark:border-border-dark dark:focus:ring-primary-dark-mode"
                           />
-                          <span className="text-sm text-text dark:text-text-dark">{day}</span>
+                          <span className="text-sm text-text dark:text-text-dark">{t(`guardians.${key}`)}</span>
                         </label>
                       ))}
                     </div>
@@ -593,24 +601,24 @@ function GuardiansPageContent() {
 
                   {/* Gender Filter */}
                   <div className="space-y-3">
-                    <Label htmlFor="gender-mobile" className="text-sm font-semibold text-text dark:text-text-dark">Gender</Label>
+                    <Label htmlFor="gender-mobile" className="text-sm font-semibold text-text dark:text-text-dark">{t('guardians.gender')}</Label>
                     <Select
                       id="gender-mobile"
                       value={selectedGender}
                       onChange={(e) => setSelectedGender(e.target.value)}
                     >
-                      <option value="">All Genders</option>
-                      <option value="Male">Male</option>
-                      <option value="Female">Female</option>
-                      <option value="Other">Other</option>
-                      <option value="Prefer not to say">Prefer not to say</option>
+                      <option value="">{t('guardians.allGenders')}</option>
+                      <option value="Male">{t('guardians.male')}</option>
+                      <option value="Female">{t('guardians.female')}</option>
+                      <option value="Other">{t('guardians.other')}</option>
+                      <option value="Prefer not to say">{t('guardians.preferNotToSay')}</option>
                     </Select>
                   </div>
 
                   {/* Experience Range */}
                   <div className="space-y-3">
                     <Label className="text-sm font-semibold text-text dark:text-text-dark">
-                      Experience: {experienceRange[0]} - {experienceRange[1]} years
+                      {t('guardians.experience')}: {experienceRange[0]} - {experienceRange[1]} {t('guardians.years')}
                     </Label>
                     <div className="space-y-3 rounded-md border border-border dark:border-border-dark p-4 bg-background-secondary dark:bg-background-dark-secondary">
                       <div className="flex items-center gap-2">
@@ -622,7 +630,7 @@ function GuardiansPageContent() {
                           onChange={(e) => setExperienceRange([Number(e.target.value), experienceRange[1]])}
                           className="w-20"
                         />
-                        <span className="text-sm text-text-muted dark:text-text-dark-muted">to</span>
+                        <span className="text-sm text-text-muted dark:text-text-dark-muted">{t('guardians.to')}</span>
                         <Input
                           type="number"
                           min="0"
@@ -654,7 +662,7 @@ function GuardiansPageContent() {
                   {/* Distance Range */}
                   <div className="space-y-3">
                     <Label className="text-sm font-semibold text-text dark:text-text-dark">
-                      Service Radius: {distanceRange[0]} - {distanceRange[1]} km
+                      {t('guardians.serviceRadius')}: {distanceRange[0]} - {distanceRange[1]} {t('guardians.km')}
                     </Label>
                     <div className="space-y-3 rounded-md border border-border dark:border-border-dark p-4 bg-background-secondary dark:bg-background-dark-secondary">
                       <div className="flex items-center gap-2">
@@ -666,7 +674,7 @@ function GuardiansPageContent() {
                           onChange={(e) => setDistanceRange([Number(e.target.value), distanceRange[1]])}
                           className="w-20"
                         />
-                        <span className="text-sm text-text-muted dark:text-text-dark-muted">to</span>
+                        <span className="text-sm text-text-muted dark:text-text-dark-muted">{t('guardians.to')}</span>
                         <Input
                           type="number"
                           min="0"
@@ -697,19 +705,19 @@ function GuardiansPageContent() {
 
                   {/* Sort By */}
                   <div className="space-y-3">
-                    <Label htmlFor="sort-mobile" className="text-sm font-semibold text-text dark:text-text-dark">Sort By</Label>
+                    <Label htmlFor="sort-mobile" className="text-sm font-semibold text-text dark:text-text-dark">{t('guardians.sortBy')}</Label>
                     <Select
                       id="sort-mobile"
                       value={sortBy}
                       onChange={(e) => setSortBy(e.target.value)}
                     >
-                      <option value="rating">Highest Rating</option>
+                      <option value="rating">{t('guardians.sort.rating')}</option>
                       {featureFlags.AI_MATCHING && (
-                        <option value="ai-recommended">AI-Recommended</option>
+                        <option value="ai-recommended">{t('guardians.sort.ai')}</option>
                       )}
-                      <option value="distance">Nearest First</option>
-                      <option value="experience">Most Experience</option>
-                      <option value="name">Name (A-Z)</option>
+                      <option value="distance">{t('guardians.sort.distance')}</option>
+                      <option value="experience">{t('guardians.sort.experience')}</option>
+                      <option value="name">{t('guardians.sort.name')}</option>
                     </Select>
                   </div>
                 </div>
@@ -718,7 +726,7 @@ function GuardiansPageContent() {
                     className="w-full"
                     onClick={() => setShowFilters(false)}
                   >
-                    Apply Filters
+                    {t('guardians.applyFilters')}
                   </Button>
                 </div>
               </CardContent>
@@ -732,7 +740,7 @@ function GuardiansPageContent() {
             <CardContent className="p-4 sm:p-6">
               <div className="mb-6 flex items-center justify-between border-b border-border dark:border-border-dark pb-4">
                 <h3 className="text-lg font-semibold text-text dark:text-text-dark transition-colors">
-                  Filter Guardians
+                  {t('guardians.filterGuardians')}
                 </h3>
                 <Button
                   variant="ghost"
@@ -740,14 +748,14 @@ function GuardiansPageContent() {
                   onClick={clearAllFilters}
                   disabled={!hasActiveFilters}
                 >
-                  Clear All
+                  {t('guardians.clearAll')}
                 </Button>
               </div>
 
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {/* Specialization Filter */}
                 <div className="space-y-3">
-                  <Label className="text-sm font-semibold text-text dark:text-text-dark">Specialization</Label>
+                  <Label className="text-sm font-semibold text-text dark:text-text-dark">{t('guardians.specialization')}</Label>
                   <div className="max-h-40 space-y-2 overflow-y-auto rounded-md border border-border dark:border-border-dark p-3 bg-background-secondary dark:bg-background-dark-secondary">
                     {allSpecializations.map((spec) => (
                       <label key={spec} className="flex items-center gap-2 cursor-pointer hover:bg-background dark:hover:bg-background-dark p-1 rounded">
@@ -771,9 +779,17 @@ function GuardiansPageContent() {
 
                 {/* Availability Days Filter */}
                 <div className="space-y-3">
-                  <Label className="text-sm font-semibold text-text dark:text-text-dark">Available Days</Label>
+                  <Label className="text-sm font-semibold text-text dark:text-text-dark">{t('guardians.availableDays')}</Label>
                   <div className="space-y-2 rounded-md border border-border dark:border-border-dark p-3 bg-background-secondary dark:bg-background-dark-secondary">
-                    {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day) => (
+                    {[
+                      { en: 'Monday', key: 'monday' },
+                      { en: 'Tuesday', key: 'tuesday' },
+                      { en: 'Wednesday', key: 'wednesday' },
+                      { en: 'Thursday', key: 'thursday' },
+                      { en: 'Friday', key: 'friday' },
+                      { en: 'Saturday', key: 'saturday' },
+                      { en: 'Sunday', key: 'sunday' }
+                    ].map(({ en: day, key }) => (
                       <label key={day} className="flex items-center gap-2 cursor-pointer hover:bg-background dark:hover:bg-background-dark p-1 rounded">
                         <input
                           type="checkbox"
@@ -787,7 +803,7 @@ function GuardiansPageContent() {
                           }}
                           className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary dark:border-border-dark dark:focus:ring-primary-dark-mode"
                         />
-                        <span className="text-sm text-text dark:text-text-dark transition-colors">{day}</span>
+                        <span className="text-sm text-text dark:text-text-dark transition-colors">{t(`guardians.${key}`)}</span>
                       </label>
                     ))}
                   </div>
@@ -795,24 +811,24 @@ function GuardiansPageContent() {
 
                 {/* Gender Filter */}
                 <div className="space-y-3">
-                  <Label htmlFor="gender" className="text-sm font-semibold text-text dark:text-text-dark">Gender</Label>
+                  <Label htmlFor="gender" className="text-sm font-semibold text-text dark:text-text-dark">{t('guardians.gender')}</Label>
                   <Select
                     id="gender"
                     value={selectedGender}
                     onChange={(e) => setSelectedGender(e.target.value)}
                   >
-                    <option value="">All Genders</option>
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                    <option value="Other">Other</option>
-                    <option value="Prefer not to say">Prefer not to say</option>
+                    <option value="">{t('guardians.allGenders')}</option>
+                    <option value="Male">{t('guardians.male')}</option>
+                    <option value="Female">{t('guardians.female')}</option>
+                    <option value="Other">{t('guardians.other')}</option>
+                    <option value="Prefer not to say">{t('guardians.preferNotToSay')}</option>
                   </Select>
                 </div>
 
                 {/* Experience Range */}
                 <div className="space-y-3">
                   <Label className="text-sm font-semibold text-text dark:text-text-dark">
-                    Experience: {experienceRange[0]} - {experienceRange[1]} years
+                    {t('guardians.experience')}: {experienceRange[0]} - {experienceRange[1]} {t('guardians.years')}
                   </Label>
                   <div className="space-y-3 rounded-md border border-border dark:border-border-dark p-4 bg-background-secondary dark:bg-background-dark-secondary">
                     <div className="flex items-center gap-2">
@@ -824,7 +840,7 @@ function GuardiansPageContent() {
                         onChange={(e) => setExperienceRange([Number(e.target.value), experienceRange[1]])}
                         className="w-20"
                       />
-                      <span className="text-sm text-text-muted dark:text-text-dark-muted">to</span>
+                      <span className="text-sm text-text-muted dark:text-text-dark-muted">{t('guardians.to')}</span>
                       <Input
                         type="number"
                         min="0"
@@ -856,7 +872,7 @@ function GuardiansPageContent() {
                 {/* Distance Range */}
                 <div className="space-y-3">
                   <Label className="text-sm font-semibold text-text dark:text-text-dark">
-                    Service Radius: {distanceRange[0]} - {distanceRange[1]} km
+                    {t('guardians.serviceRadius')}: {distanceRange[0]} - {distanceRange[1]} {t('guardians.km')}
                   </Label>
                   <div className="space-y-3 rounded-md border border-border dark:border-border-dark p-4 bg-background-secondary dark:bg-background-dark-secondary">
                     <div className="flex items-center gap-2">
@@ -868,7 +884,7 @@ function GuardiansPageContent() {
                         onChange={(e) => setDistanceRange([Number(e.target.value), distanceRange[1]])}
                         className="w-20"
                       />
-                      <span className="text-sm text-text-muted dark:text-text-dark-muted">to</span>
+                      <span className="text-sm text-text-muted dark:text-text-dark-muted">{t('guardians.to')}</span>
                       <Input
                         type="number"
                         min="0"
@@ -899,20 +915,20 @@ function GuardiansPageContent() {
 
                 {/* Sort By */}
                 <div className="space-y-3">
-                  <Label htmlFor="sort" className="text-sm font-semibold text-text dark:text-text-dark">Sort By</Label>
+                  <Label htmlFor="sort" className="text-sm font-semibold text-text dark:text-text-dark">{t('guardians.sortBy')}</Label>
                   <Select
                     id="sort"
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value)}
-                    aria-label="Sort guardians"
+                    aria-label={t('guardians.sortBy')}
                   >
-                    <option value="rating">Highest Rating</option>
+                    <option value="rating">{t('guardians.sort.rating')}</option>
                     {featureFlags.AI_MATCHING && (
-                      <option value="ai-recommended">AI-Recommended</option>
+                      <option value="ai-recommended">{t('guardians.sort.ai')}</option>
                     )}
-                    <option value="distance">Nearest First</option>
-                    <option value="experience">Most Experience</option>
-                    <option value="name">Name (A-Z)</option>
+                    <option value="distance">{t('guardians.sort.distance')}</option>
+                    <option value="experience">{t('guardians.sort.experience')}</option>
+                    <option value="name">{t('guardians.sort.name')}</option>
                   </Select>
                 </div>
               </div>
@@ -922,7 +938,7 @@ function GuardiansPageContent() {
 
         {/* Results Count */}
         <div className="mb-4 text-sm text-text-muted dark:text-text-dark-muted transition-colors">
-          Showing {filteredAndSortedGuardians.length} of {activeTab === 'saved' ? savedGuardians.length : guardians.length} {activeTab === 'saved' ? 'saved' : ''} guardians
+          {t('guardians.showing')} {filteredAndSortedGuardians.length} {t('guardians.of')} {activeTab === 'saved' ? savedGuardians.length : guardians.length} {activeTab === 'saved' ? t('guardians.saved') : ''} {t('guardians.guardians')}
         </div>
 
 
@@ -978,7 +994,7 @@ function GuardiansPageContent() {
                               className="flex items-center gap-1.5 px-2.5 py-1 shadow-md backdrop-blur-sm bg-success/90 text-white border-0"
                             >
                               <Shield className="h-3.5 w-3.5" />
-                              <span className="text-xs font-semibold">Verified</span>
+                              <span className="text-xs font-semibold">{t('guardians.verified')}</span>
                             </Badge>
                           )}
                         </div>
@@ -989,7 +1005,7 @@ function GuardiansPageContent() {
                           size="icon"
                           className="absolute left-3 top-3 z-10 h-9 w-9 rounded-full bg-background/95 dark:bg-background-dark/95 hover:bg-background dark:hover:bg-background-dark shadow-lg backdrop-blur-sm border border-border/50 dark:border-border-dark/50 transition-all hover:scale-110"
                           onClick={() => toggleSaveGuardian(guardian._id)}
-                          aria-label={isSaved ? 'Remove from saved' : 'Save guardian'}
+                          aria-label={isSaved ? t('guardians.unsave') : t('guardians.save')}
                         >
                           <Heart
                             className={`h-4 w-4 transition-all ${
@@ -1059,11 +1075,11 @@ function GuardiansPageContent() {
                           <div className="flex items-center gap-1.5">
                             <span className="text-sm font-bold text-secondary dark:text-secondary-dark-mode transition-colors">
                               {guardian.pricing.hourly ? (
-                                <>From ₹{guardian.pricing.hourly}/hr</>
+                                <>{t('guardians.from')} ₹{guardian.pricing.hourly}{t('guardians.perHour')}</>
                               ) : guardian.pricing.daily ? (
-                                <>From ₹{guardian.pricing.daily}/day</>
+                                <>{t('guardians.from')} ₹{guardian.pricing.daily}{t('guardians.perDay')}</>
                               ) : guardian.pricing.monthly ? (
-                                <>From ₹{guardian.pricing.monthly}/month</>
+                                <>{t('guardians.from')} ₹{guardian.pricing.monthly}{t('guardians.perMonth')}</>
                               ) : (
                                 <span className="text-xs text-text-muted dark:text-text-dark-muted">
                                   {t('form.pricing.availableOnRequest')}
@@ -1077,7 +1093,7 @@ function GuardiansPageContent() {
                         {/* Trusted by X families */}
                         {guardian.reviewCount !== undefined && guardian.reviewCount > 0 && (
                           <div className="flex items-center gap-1.5 text-xs text-text-muted dark:text-text-dark-muted">
-                            <span>Trusted by {guardian.reviewCount} {guardian.reviewCount === 1 ? 'family' : 'families'}</span>
+                            <span>{t('guardians.trustedBy')} {guardian.reviewCount} {guardian.reviewCount === 1 ? t('guardians.family') : t('guardians.families')}</span>
                           </div>
                         )}
                       </div>
@@ -1092,7 +1108,7 @@ function GuardiansPageContent() {
                         {hasPastBooking && (
                           <Link href={`/vital/guardians/${guardian._id}`}>
                             <Button variant="outline" size="sm" className="w-full whitespace-nowrap text-xs sm:text-sm">
-                              Book Again
+                              {t('guardians.bookAgain')}
                             </Button>
                           </Link>
                         )}
@@ -1113,14 +1129,14 @@ function GuardiansPageContent() {
                     <Heart className="h-12 w-12 text-primary dark:text-primary-dark-mode" />
                   </div>
                   <h2 className="text-xl font-semibold text-text dark:text-text-dark mb-3 sm:text-2xl transition-colors">
-                    No saved guardians yet
+                    {t('guardians.noSavedGuardians')}
                   </h2>
                   <p className="text-base text-text-muted dark:text-text-dark-muted mb-6 max-w-md transition-colors">
-                    Start browsing guardians and save your favorites by clicking the heart icon on their cards. Your saved guardians will appear here for easy access.
+                    {t('guardians.noSavedGuardiansDesc')}
                   </p>
                   <Link href="/vital/guardians">
                     <Button size="lg" onClick={() => setActiveTab('all')}>
-                      Browse Guardians
+                      {t('vital.browse')}
                     </Button>
                   </Link>
                 </>
@@ -1130,16 +1146,16 @@ function GuardiansPageContent() {
                     <Search className="h-12 w-12 text-primary dark:text-primary-dark-mode" />
                   </div>
                   <h2 className="text-xl font-semibold text-text dark:text-text-dark mb-3 sm:text-2xl transition-colors">
-                    No guardians found
+                    {t('guardians.noGuardiansFound')}
                   </h2>
                   <p className="text-base text-text-muted dark:text-text-dark-muted mb-6 max-w-md transition-colors">
                     {hasActiveFilters 
-                      ? 'No guardians match your current filters. Try adjusting your search criteria or clear filters to see all available guardians.'
-                      : 'No guardians are available at the moment. Please check back later.'}
+                      ? t('guardians.noGuardiansMatchFilters')
+                      : t('guardians.noGuardiansAvailable')}
                   </p>
                   {hasActiveFilters && (
                     <Button size="lg" onClick={clearAllFilters}>
-                      Clear All Filters
+                      {t('guardians.clearAllFilters')}
                     </Button>
                   )}
                 </>

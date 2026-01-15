@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useTranslation } from '@/lib/i18n';
+import i18n from '@/lib/i18n';
 import { Plus, Calendar, User, Star, MapPin, Clock, CheckCircle, TrendingUp, Power, PowerOff, Edit } from 'lucide-react';
 import { StarRating } from '@/components/StarRating';
 import { featureFlags } from '@/lib/feature-flags';
@@ -86,6 +87,7 @@ export default function GuardianDashboardPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const { t } = useTranslation();
+  const currentLanguage = i18n.language || 'en';
   const [profile, setProfile] = useState<GuardianProfile | null>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -169,7 +171,7 @@ export default function GuardianDashboardPage() {
       }
     } catch (error) {
       console.error('Failed to update booking:', error);
-      alert('An error occurred');
+      alert(t('error.generic'));
     }
   };
 
@@ -193,7 +195,7 @@ export default function GuardianDashboardPage() {
         }
       } catch (error) {
         console.error('Failed to reschedule booking:', error);
-        alert('An error occurred');
+        alert(t('error.generic'));
       }
     }
   };
@@ -299,14 +301,14 @@ export default function GuardianDashboardPage() {
         <div className="container mx-auto px-4 py-8">
           <Card className="mx-auto max-w-md">
             <CardHeader>
-              <CardTitle>Welcome to CareConnect</CardTitle>
-              <CardDescription>Create your Guardian profile to get started</CardDescription>
+              <CardTitle>{t('common.welcome')} {t('nav.home')}</CardTitle>
+              <CardDescription>{t('dashboard.guardian.createProfile')}</CardDescription>
             </CardHeader>
             <CardContent>
               <Link href="/guardian/profile/create">
                 <Button className="w-full">
                   <Plus className="mr-2 h-4 w-4" />
-                  Create Profile
+                  {t('form.create')}
                 </Button>
               </Link>
             </CardContent>
@@ -329,7 +331,7 @@ export default function GuardianDashboardPage() {
     ACCEPTED: t('guardian.status.accepted'),
     ONGOING: t('guardian.status.ongoing'),
     COMPLETED: t('guardian.status.completed'),
-    REJECTED: 'Rejected',
+    REJECTED: t('booking.status.rejected'),
   };
 
   return (
@@ -337,8 +339,8 @@ export default function GuardianDashboardPage() {
       <Navbar />
       <div className="container mx-auto px-4 py-6 sm:px-6 sm:py-8">
         <div className="mb-6 sm:mb-8">
-          <h1 className="text-2xl font-bold text-text sm:text-3xl dark:text-text-dark transition-colors">Welcome, {profile.name}!</h1>
-          <p className="text-sm text-text-muted sm:text-base dark:text-text-dark-light transition-colors">Your Guardian dashboard</p>
+          <h1 className="text-2xl font-bold text-text sm:text-3xl dark:text-text-dark transition-colors">{t('dashboard.guardian.welcome')}, {profile.name}!</h1>
+          <p className="text-sm text-text-muted sm:text-base dark:text-text-dark-light transition-colors">{t('dashboard.guardian.subtitle')}</p>
         </div>
 
         {/* Overview Widgets */}
@@ -346,7 +348,7 @@ export default function GuardianDashboardPage() {
           {/* Profile Completion */}
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">Profile Completion</CardTitle>
+              <CardTitle className="text-base">{t('dashboard.guardian.profileCompletion')}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex items-center gap-3">
@@ -369,7 +371,7 @@ export default function GuardianDashboardPage() {
                 onClick={() => router.push('/guardian/profile/create')}
               >
                 <Edit className="mr-2 h-4 w-4" />
-                Complete Profile
+                {t('dashboard.guardian.completeProfile')}
               </Button>
             </CardContent>
           </Card>
@@ -377,16 +379,16 @@ export default function GuardianDashboardPage() {
           {/* Availability Toggle */}
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">Availability</CardTitle>
+              <CardTitle className="text-base">{t('dashboard.guardian.availability')}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-semibold text-text dark:text-text-dark transition-colors">
-                    {isAvailable ? 'Available' : 'Unavailable'}
+                    {isAvailable ? t('dashboard.guardian.available') : t('dashboard.guardian.unavailable')}
                   </p>
                   <p className="text-xs text-text-muted dark:text-text-dark-muted transition-colors">
-                    {isAvailable ? 'Accepting bookings' : 'Not accepting bookings'}
+                    {isAvailable ? t('dashboard.guardian.acceptingBookings') : t('dashboard.guardian.notAcceptingBookings')}
                   </p>
                 </div>
                 <button
@@ -405,12 +407,12 @@ export default function GuardianDashboardPage() {
               {isAvailable ? (
                 <div className="mt-3 flex items-center gap-1 text-xs text-success">
                   <Power className="h-3 w-3" />
-                  <span>ON</span>
+                  <span>{t('dashboard.guardian.on')}</span>
                 </div>
               ) : (
                 <div className="mt-3 flex items-center gap-1 text-xs text-error">
                   <PowerOff className="h-3 w-3" />
-                  <span>OFF</span>
+                  <span>{t('dashboard.guardian.off')}</span>
                 </div>
               )}
             </CardContent>
@@ -421,12 +423,12 @@ export default function GuardianDashboardPage() {
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-base">
                 <Clock className="h-4 w-4" />
-                Today
+                {t('dashboard.guardian.today')}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-2xl font-bold text-text dark:text-text-dark transition-colors">{todayBookings.length}</p>
-              <p className="text-sm text-text-muted dark:text-text-dark-muted transition-colors">Bookings today</p>
+              <p className="text-sm text-text-muted dark:text-text-dark-muted transition-colors">{t('dashboard.guardian.bookingsToday')}</p>
             </CardContent>
           </Card>
 
@@ -435,12 +437,12 @@ export default function GuardianDashboardPage() {
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-base">
                 <Calendar className="h-4 w-4" />
-                Upcoming
+                {t('dashboard.guardian.upcoming')}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-2xl font-bold text-text dark:text-text-dark transition-colors">{upcomingBookings.length}</p>
-              <p className="text-sm text-text-muted dark:text-text-dark-muted transition-colors">Scheduled bookings</p>
+              <p className="text-sm text-text-muted dark:text-text-dark-muted transition-colors">{t('dashboard.guardian.scheduledBookings')}</p>
             </CardContent>
           </Card>
         </div>
@@ -451,12 +453,12 @@ export default function GuardianDashboardPage() {
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-base">
                 <TrendingUp className="h-4 w-4" />
-                Total Bookings
+                {t('dashboard.guardian.totalBookings')}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-3xl font-bold text-text dark:text-text-dark transition-colors">{quickStats.totalBookings}</p>
-              <p className="text-sm text-text-muted dark:text-text-dark-muted transition-colors">All time</p>
+              <p className="text-sm text-text-muted dark:text-text-dark-muted transition-colors">{t('dashboard.guardian.allTime')}</p>
             </CardContent>
           </Card>
 
@@ -464,7 +466,7 @@ export default function GuardianDashboardPage() {
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-base">
                 <Star className="h-4 w-4" />
-                Average Rating
+                {t('dashboard.guardian.averageRating')}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -477,7 +479,7 @@ export default function GuardianDashboardPage() {
                 )}
               </div>
               <p className="text-sm text-text-muted dark:text-text-dark-muted transition-colors">
-                {reviews.length} {reviews.length === 1 ? 'review' : 'reviews'}
+                {reviews.length} {reviews.length === 1 ? t('dashboard.guardian.review') : t('dashboard.guardian.reviews')}
               </p>
             </CardContent>
           </Card>
@@ -486,12 +488,12 @@ export default function GuardianDashboardPage() {
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-base">
                 <User className="h-4 w-4" />
-                Active Vitals
+                {t('dashboard.guardian.activeVitals')}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-3xl font-bold text-text dark:text-text-dark transition-colors">{quickStats.activeVitals}</p>
-              <p className="text-sm text-text-muted dark:text-text-dark-muted transition-colors">Currently active</p>
+              <p className="text-sm text-text-muted dark:text-text-dark-muted transition-colors">{t('dashboard.guardian.currentlyActive')}</p>
             </CardContent>
           </Card>
         </div>
@@ -502,15 +504,15 @@ export default function GuardianDashboardPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <MapPin className="h-5 w-5" />
-                My Location & Service Area
+                {t('dashboard.guardian.myLocation')}
               </CardTitle>
               <CardDescription>
-                Your service location and radius
+                {t('dashboard.guardian.serviceLocationDesc')}
               </CardDescription>
             </CardHeader>
             <CardContent className="p-4 sm:p-6">
                 <p className="text-sm text-text-muted dark:text-text-dark-muted transition-colors">
-                  Service radius: {profile.serviceRadius || 10} km from {profile.location?.city || 'your location'}
+                  {t('dashboard.guardian.serviceRadius')}: {profile.serviceRadius || 10} {t('dashboard.guardian.kmFrom')} {profile.location?.city || t('dashboard.guardian.yourLocation')}
                 </p>
             </CardContent>
           </Card>
@@ -519,17 +521,17 @@ export default function GuardianDashboardPage() {
         {/* Booking Management */}
         <Card>
           <CardHeader>
-            <CardTitle>Booking Management</CardTitle>
-            <CardDescription>Manage incoming requests and active bookings</CardDescription>
+            <CardTitle>{t('dashboard.guardian.bookingManagement')}</CardTitle>
+            <CardDescription>{t('dashboard.guardian.bookingManagementDesc')}</CardDescription>
           </CardHeader>
           <CardContent>
             {bookings.length === 0 ? (
-              <p className="py-8 text-center text-text-muted dark:text-text-dark-muted transition-colors">No bookings yet</p>
+              <p className="py-8 text-center text-text-muted dark:text-text-dark-muted transition-colors">{t('dashboard.guardian.noBookings')}</p>
             ) : (
               <div className="space-y-4">
                 {bookings.map((booking) => {
                   const bookingDate = booking.startDate ? new Date(booking.startDate) : null;
-                  const bookingTime = booking.startDate ? new Date(booking.startDate).toLocaleTimeString('en-US', { 
+                  const bookingTime = booking.startDate ? new Date(booking.startDate).toLocaleTimeString(currentLanguage === 'hi' ? 'hi-IN' : 'en-US', { 
                     hour: '2-digit', 
                     minute: '2-digit' 
                   }) : null;
@@ -574,16 +576,16 @@ export default function GuardianDashboardPage() {
                           <div className="grid gap-2 sm:grid-cols-2">
                             {booking.careType && (
                               <div className="flex items-center gap-2 text-sm">
-                                <span className="text-text-muted dark:text-text-dark-muted transition-colors">Care Type:</span>
+                                <span className="text-text-muted dark:text-text-dark-muted transition-colors">{t('dashboard.guardian.careType')}:</span>
                                 <span className="font-medium text-text dark:text-text-dark transition-colors">{booking.careType}</span>
                               </div>
                             )}
                             {bookingDate && (
                               <div className="flex items-center gap-2 text-sm">
                                 <Calendar className="h-4 w-4 text-text-muted dark:text-text-dark-muted transition-colors" />
-                                <span className="text-text-muted dark:text-text-dark-muted transition-colors">Date:</span>
+                                <span className="text-text-muted dark:text-text-dark-muted transition-colors">{t('dashboard.guardian.date')}:</span>
                                 <span className="font-medium text-text dark:text-text-dark transition-colors">
-                                  {bookingDate.toLocaleDateString('en-US', { 
+                                  {bookingDate.toLocaleDateString(currentLanguage === 'hi' ? 'hi-IN' : 'en-US', { 
                                     weekday: 'short', 
                                     year: 'numeric', 
                                     month: 'short', 
@@ -595,15 +597,15 @@ export default function GuardianDashboardPage() {
                             {bookingTime && (
                               <div className="flex items-center gap-2 text-sm">
                                 <Clock className="h-4 w-4 text-text-muted dark:text-text-dark-muted transition-colors" />
-                                <span className="text-text-muted dark:text-text-dark-muted transition-colors">Time:</span>
+                                <span className="text-text-muted dark:text-text-dark-muted transition-colors">{t('dashboard.guardian.time')}:</span>
                                 <span className="font-medium text-text dark:text-text-dark transition-colors">{bookingTime}</span>
                               </div>
                             )}
                             {booking.endDate && (
                               <div className="flex items-center gap-2 text-sm">
-                                <span className="text-text-muted dark:text-text-dark-muted transition-colors">End:</span>
+                                <span className="text-text-muted dark:text-text-dark-muted transition-colors">{t('dashboard.guardian.end')}:</span>
                                 <span className="font-medium text-text dark:text-text-dark transition-colors">
-                                  {new Date(booking.endDate).toLocaleDateString('en-US', { 
+                                  {new Date(booking.endDate).toLocaleDateString(currentLanguage === 'hi' ? 'hi-IN' : 'en-US', { 
                                     month: 'short', 
                                     day: 'numeric' 
                                   })}
@@ -614,7 +616,7 @@ export default function GuardianDashboardPage() {
 
                           {booking.notes && (
                             <div className="rounded-md bg-background/50 dark:bg-background-dark/50 p-3">
-                              <p className="text-xs font-medium text-text-muted dark:text-text-dark-muted transition-colors mb-1">Notes:</p>
+                              <p className="text-xs font-medium text-text-muted dark:text-text-dark-muted transition-colors mb-1">{t('booking.notes')}:</p>
                               <p className="text-sm text-text dark:text-text-dark transition-colors">{booking.notes}</p>
                             </div>
                           )}
@@ -630,7 +632,7 @@ export default function GuardianDashboardPage() {
                                 className="w-full text-xs sm:text-sm"
                               >
                                 <CheckCircle className="mr-2 h-4 w-4" />
-                                Accept
+                                {t('guardian.accept')}
                               </Button>
                               <Button
                                 size="sm"
@@ -638,7 +640,7 @@ export default function GuardianDashboardPage() {
                                 onClick={() => handleBookingAction(booking._id, 'reject')}
                                 className="w-full text-xs sm:text-sm"
                               >
-                                Reject
+                                {t('guardian.reject')}
                               </Button>
                             </div>
                           )}
@@ -649,7 +651,7 @@ export default function GuardianDashboardPage() {
                                 onClick={() => handleBookingAction(booking._id, 'start')}
                                 className="w-full text-xs sm:text-sm"
                               >
-                                Start Service
+                                {t('dashboard.guardian.startService')}
                               </Button>
                               <Button
                                 size="sm"
@@ -657,7 +659,7 @@ export default function GuardianDashboardPage() {
                                 onClick={() => handleReschedule(booking._id)}
                                 className="w-full text-xs sm:text-sm"
                               >
-                                Reschedule
+                                {t('dashboard.guardian.reschedule')}
                               </Button>
                             </div>
                           )}
@@ -668,7 +670,7 @@ export default function GuardianDashboardPage() {
                               className="w-full text-xs sm:text-sm"
                             >
                               <CheckCircle className="mr-2 h-4 w-4" />
-                              Mark Complete
+                              {t('dashboard.guardian.markComplete')}
                             </Button>
                           )}
                           {(booking.status === 'ACCEPTED' || booking.status === 'ONGOING') && (
@@ -697,10 +699,10 @@ export default function GuardianDashboardPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Star className="h-5 w-5" />
-                Reviews from Vitals
+                {t('dashboard.guardian.reviewsFromVitals')}
               </CardTitle>
               <CardDescription>
-                Reviews left by Vitals who completed services with you (read-only)
+                {t('dashboard.guardian.reviewsDesc')}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -729,7 +731,7 @@ export default function GuardianDashboardPage() {
                           {review.vitalId.name}
                         </p>
                         <p className="text-xs text-text-muted dark:text-text-dark-light">
-                          {new Date(review.createdAt).toLocaleDateString('en-US', {
+                          {new Date(review.createdAt).toLocaleDateString(currentLanguage === 'hi' ? 'hi-IN' : 'en-US', {
                             year: 'numeric',
                             month: 'long',
                             day: 'numeric',
@@ -761,12 +763,12 @@ export default function GuardianDashboardPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Star className="h-5 w-5" />
-                Reviews
+                {t('dashboard.guardian.reviewsTitle')}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <p className="py-4 text-center text-text-muted dark:text-text-dark-light">
-                No reviews yet. Reviews will appear here once Vitals complete services and leave feedback.
+                {t('dashboard.guardian.noReviews')}
               </p>
             </CardContent>
           </Card>

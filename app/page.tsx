@@ -208,7 +208,7 @@ export default function HomePage() {
       </section>
 
       {/* How it Works */}
-      <section className="py-16 sm:py-20 md:py-24">
+      <section id="how-it-works" className="py-16 sm:py-20 md:py-24">
         <div className="container mx-auto px-4 sm:px-6">
           <motion.div
             initial="initial"
@@ -320,10 +320,10 @@ export default function HomePage() {
             className="mb-12 text-center md:mb-16"
           >
             <h2 className="mb-4 text-3xl font-bold text-text dark:text-text-dark sm:text-4xl sm:mb-6 md:text-5xl transition-colors">
-              Why CareConnect?
+              {t('home.why.title')}
             </h2>
             <p className="mx-auto max-w-2xl text-base text-text-light dark:text-text-dark-light sm:text-lg transition-colors">
-              Built on trust, designed for care
+              {t('home.why.subtitle')}
             </p>
           </motion.div>
 
@@ -477,10 +477,10 @@ export default function HomePage() {
             className="mb-12 text-center md:mb-16"
           >
             <h2 className="mb-4 text-3xl font-bold text-text dark:text-text-dark sm:text-4xl sm:mb-6 md:text-5xl transition-colors">
-              What People Say
+              {t('home.testimonials.title')}
             </h2>
             <p className="mx-auto max-w-2xl text-base text-text-light dark:text-text-dark-light sm:text-lg transition-colors">
-              Real stories from our community
+              {t('home.testimonials.subtitle')}
             </p>
           </motion.div>
 
@@ -504,8 +504,8 @@ export default function HomePage() {
                       PS
                     </div>
                     <div className="flex-1">
-                      <p className="font-semibold text-text dark:text-text-dark sm:text-base transition-colors">Priya S.</p>
-                      <Badge variant="outline" className="mt-1 text-xs">Vital</Badge>
+                      <p className="font-semibold text-text dark:text-text-dark sm:text-base transition-colors">{t('home.testimonials.priya.name')}</p>
+                      <Badge variant="outline" className="mt-1 text-xs">{t('home.testimonials.badge.vital')}</Badge>
                     </div>
                     <div className="flex gap-0.5">
                       {[...Array(5)].map((_, i) => (
@@ -534,8 +534,8 @@ export default function HomePage() {
                       RK
                     </div>
                     <div className="flex-1">
-                      <p className="font-semibold text-text dark:text-text-dark sm:text-base transition-colors">Rajesh K.</p>
-                      <Badge variant="outline" className="mt-1 text-xs">Guardian</Badge>
+                      <p className="font-semibold text-text dark:text-text-dark sm:text-base transition-colors">{t('home.testimonials.rajesh.name')}</p>
+                      <Badge variant="outline" className="mt-1 text-xs">{t('home.testimonials.badge.guardian')}</Badge>
                     </div>
                     <div className="flex gap-0.5">
                       {[...Array(5)].map((_, i) => (
@@ -564,8 +564,8 @@ export default function HomePage() {
                       AM
                     </div>
                     <div className="flex-1">
-                      <p className="font-semibold text-text dark:text-text-dark sm:text-base transition-colors">Anjali M.</p>
-                      <Badge variant="outline" className="mt-1 text-xs">Vital</Badge>
+                      <p className="font-semibold text-text dark:text-text-dark sm:text-base transition-colors">{t('home.testimonials.anjali.name')}</p>
+                      <Badge variant="outline" className="mt-1 text-xs">{t('home.testimonials.badge.vital')}</Badge>
                     </div>
                     <div className="flex gap-0.5">
                       {[...Array(5)].map((_, i) => (
@@ -595,21 +595,21 @@ export default function HomePage() {
             className="mx-auto max-w-3xl"
           >
             <h2 className="mb-4 text-3xl font-bold text-text dark:text-text-dark sm:text-4xl sm:mb-6 md:text-5xl transition-colors">
-              Ready to Get Started?
+              {t('home.cta.title')}
             </h2>
             <p className="mb-8 text-lg text-text-light dark:text-text-dark-light sm:text-xl sm:mb-10 md:mb-12 transition-colors">
-              Join thousands of Vitals and Guardians building meaningful connections through compassionate care
+              {t('home.cta.subtitle')}
             </p>
             <div className="flex flex-col items-center justify-center gap-4 sm:flex-row sm:gap-6">
               <Link href="/auth/register?role=VITAL" className="w-full sm:w-auto">
                 <Button size="lg" className="group w-full text-base shadow-medium hover:shadow-lg transition-all sm:text-lg">
-                  Find a Guardian
+                  {t('home.cta.findGuardian')}
                   <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
                 </Button>
               </Link>
               <Link href="/auth/register?role=GUARDIAN" className="w-full sm:w-auto">
                 <Button size="lg" variant="secondary" className="group w-full text-base shadow-medium hover:shadow-lg transition-all sm:text-lg">
-                  Become a Guardian
+                  {t('home.cta.becomeGuardian')}
                   <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
                 </Button>
               </Link>

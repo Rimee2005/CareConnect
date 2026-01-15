@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useTranslation } from '@/lib/i18n';
+import i18n from '@/lib/i18n';
 import { featureFlags } from '@/lib/feature-flags';
 import { AlertCircle, Plus, Search, Calendar, MessageSquare, MapPin, Shield, Users } from 'lucide-react';
 import { StarRating } from '@/components/StarRating';
@@ -179,14 +180,14 @@ export default function VitalDashboardPage() {
         <div className="container mx-auto px-4 py-8">
           <Card className="mx-auto max-w-md">
             <CardHeader>
-              <CardTitle>Welcome to CareConnect</CardTitle>
-              <CardDescription>Create your profile to get started</CardDescription>
+              <CardTitle>{t('common.welcome')} {t('nav.home')}</CardTitle>
+              <CardDescription>{t('dashboard.vital.createProfile')}</CardDescription>
             </CardHeader>
             <CardContent>
               <Link href="/vital/profile/create">
                 <Button className="w-full">
                   <Plus className="mr-2 h-4 w-4" />
-                  Create Profile
+                  {t('form.create')}
                 </Button>
               </Link>
             </CardContent>
@@ -213,15 +214,15 @@ export default function VitalDashboardPage() {
       <Navbar />
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-text">Welcome, {profile.name}!</h1>
-          <p className="text-text-muted">Your care dashboard</p>
+          <h1 className="text-3xl font-bold text-text">{t('dashboard.vital.welcome')}, {profile.name}!</h1>
+          <p className="text-text-muted">{t('dashboard.vital.subtitle')}</p>
         </div>
 
         <div className="mb-8 grid gap-6 md:grid-cols-2">
           <Card>
             <CardHeader>
-              <CardTitle>My Profile</CardTitle>
-              <CardDescription>View and edit your profile</CardDescription>
+              <CardTitle>{t('dashboard.vital.myProfile')}</CardTitle>
+              <CardDescription>{t('dashboard.vital.viewEdit')}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex items-center gap-4">
@@ -240,12 +241,12 @@ export default function VitalDashboardPage() {
                 )}
                 <div>
                   <p className="font-semibold">{profile.name}</p>
-                  <p className="text-sm text-text-muted">Age: {profile.age}</p>
+                  <p className="text-sm text-text-muted">{t('dashboard.vital.age')}: {profile.age}</p>
                 </div>
               </div>
               <Link href="/vital/profile/create">
                 <Button variant="outline" className="mt-4 w-full">
-                  Edit Profile
+                  {t('dashboard.vital.editProfile')}
                 </Button>
               </Link>
             </CardContent>
@@ -253,8 +254,8 @@ export default function VitalDashboardPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Browse Guardians</CardTitle>
-              <CardDescription>Find compassionate caregivers</CardDescription>
+              <CardTitle>{t('dashboard.vital.browseGuardiansTitle')}</CardTitle>
+              <CardDescription>{t('dashboard.vital.browseGuardiansDesc')}</CardDescription>
             </CardHeader>
             <CardContent>
               <Link href="/vital/guardians">
@@ -267,6 +268,30 @@ export default function VitalDashboardPage() {
           </Card>
         </div>
 
+        {/* Map View - Nearest Guardians Only */}
+        {featureFlags.MAP_VIEW && vitalLocation && nearestGuardians.length > 0 && (
+          <Card className="mb-8">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MapPin className="h-5 w-5" />
+                {t('dashboard.vital.nearestGuardians')}
+              </CardTitle>
+              <CardDescription>
+                {t('dashboard.vital.nearestGuardiansDesc')}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <LeafletMap
+                guardians={nearestGuardians}
+                vitalLocation={vitalLocation}
+                radius={10}
+                onGuardianClick={(guardian) => {
+                  router.push(`/vital/guardians/${guardian._id}`);
+                }}
+              />
+            </CardContent>
+          </Card>
+        )}
 
         {/* Care History Section */}
         {allBookings.length > 0 && (
@@ -274,10 +299,10 @@ export default function VitalDashboardPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Calendar className="h-5 w-5" />
-                Care History
+                {t('dashboard.vital.careHistory')}
               </CardTitle>
               <CardDescription>
-                Track your booking status and care history
+                {t('dashboard.vital.careHistoryDesc')}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -305,10 +330,10 @@ export default function VitalDashboardPage() {
                       <div>
                         <p className="font-semibold">{booking.guardianId.name}</p>
                         <Badge className="bg-yellow-500 text-white animate-pulse">
-                          Pending
+                          {t('booking.status.pending')}
                         </Badge>
                         <p className="mt-1 text-xs text-text-muted">
-                          Awaiting guardian response
+                          {t('dashboard.vital.awaitingResponse')}
                         </p>
                       </div>
                     </div>
@@ -316,7 +341,7 @@ export default function VitalDashboardPage() {
                       <Link href={`/vital/chat/${(booking.guardianId as any)._id || ''}`}>
                         <Button variant="outline" size="sm">
                           <MessageSquare className="mr-2 h-4 w-4" />
-                          Chat
+                          {t('dashboard.vital.chat')}
                         </Button>
                       </Link>
                     )}
@@ -349,11 +374,11 @@ export default function VitalDashboardPage() {
                       <div>
                         <p className="font-semibold">{booking.guardianId.name}</p>
                         <Badge className="bg-blue-500 text-white">
-                          {booking.status === 'ONGOING' ? 'Active' : 'Accepted'}
+                          {booking.status === 'ONGOING' ? t('dashboard.vital.active') : t('booking.status.accepted')}
                         </Badge>
                         {booking.startDate && (
                           <p className="mt-1 text-xs text-text-muted">
-                            Started: {new Date(booking.startDate).toLocaleDateString()}
+                            {t('dashboard.vital.started')}: {new Date(booking.startDate).toLocaleDateString((i18n.language || 'en') === 'hi' ? 'hi-IN' : 'en-US')}
                           </p>
                         )}
                       </div>
@@ -362,7 +387,7 @@ export default function VitalDashboardPage() {
                       <Link href={`/vital/chat/${(booking.guardianId as any)._id || ''}`}>
                         <Button variant="outline" size="sm">
                           <MessageSquare className="mr-2 h-4 w-4" />
-                          Chat
+                          {t('dashboard.vital.chat')}
                         </Button>
                       </Link>
                     )}
@@ -409,10 +434,10 @@ export default function VitalDashboardPage() {
                           <div>
                             <p className="font-semibold">{booking.guardianId.name}</p>
                             <Badge className="bg-green-500 text-white">
-                              Completed
+                              {t('dashboard.vital.completed')}
                             </Badge>
                             <p className="mt-1 text-xs text-text-muted">
-                              Completed on {new Date(booking.createdAt).toLocaleDateString()}
+                              {t('dashboard.vital.completedOn')} {new Date(booking.createdAt).toLocaleDateString((i18n.language || 'en') === 'hi' ? 'hi-IN' : 'en-US')}
                             </p>
                           </div>
                         </div>
@@ -420,13 +445,13 @@ export default function VitalDashboardPage() {
                           {(booking.guardianId as any)._id && (
                             <Link href={`/vital/guardians/${(booking.guardianId as any)._id}`}>
                               <Button size="sm" variant="outline" className="whitespace-nowrap">
-                                Book Again
+                                {t('dashboard.vital.bookAgain')}
                               </Button>
                             </Link>
                           )}
                           <Link href={`/vital/reviews/create/${booking._id}`}>
                             <Button size="sm" className="bg-green-500 hover:bg-green-600">
-                              Leave Review
+                              {t('dashboard.vital.leaveReview')}
                             </Button>
                           </Link>
                         </div>
@@ -444,13 +469,13 @@ export default function VitalDashboardPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <AlertCircle className="h-5 w-5 text-error" />
-                Emergency Support
+                {t('dashboard.vital.emergencySupport')}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <p className="mb-4 text-text-muted">{t('feature.sos.comingSoon')}</p>
               <Button variant="outline" disabled>
-                Coming Soon
+                {t('dashboard.vital.comingSoon')}
               </Button>
             </CardContent>
           </Card>

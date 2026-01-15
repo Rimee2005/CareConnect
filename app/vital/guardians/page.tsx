@@ -12,12 +12,13 @@ import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { useTranslation } from '@/lib/i18n';
-import { Search, Star, MapPin, Shield, Heart, X, ArrowLeft, SlidersHorizontal, Calendar, Clock } from 'lucide-react';
+import { Search, Star, MapPin, Shield, Heart, X, ArrowLeft, SlidersHorizontal, Calendar, Clock, CheckCircle, Languages, Clock as ClockIcon, TrendingUp } from 'lucide-react';
 import { AIBadge } from '@/components/AIBadge';
 import { StarRating } from '@/components/StarRating';
 import { GuardianMap } from '@/components/GuardianMap';
 import { featureFlags } from '@/lib/feature-flags';
 import { calculateDistance, formatDistance } from '@/lib/utils';
+import { formatResponseSpeed, getAvailabilityStatus, formatReliabilityScore } from '@/lib/guardian-metrics';
 
 interface Guardian {
   _id: string;
@@ -25,22 +26,47 @@ interface Guardian {
   age: number;
   gender: string;
   experience: number;
+  experienceBreakdown?: Array<{ years: number; type: string }>;
   specialization: string[];
+  careTags?: string[];
+  introduction?: string;
   availability: {
     days: string[];
     hours: {
       start: string;
       end: string;
     };
+    shiftType?: 'Morning' | 'Night' | '24×7';
   };
+  languages?: string[];
   profilePhoto?: string;
   isVerified: boolean;
+  verificationBadges?: {
+    idVerified: boolean;
+    certificationUploaded: boolean;
+    highlyRated: boolean;
+    repeatBookings: boolean;
+  };
   serviceRadius: number;
   location?: {
     city?: string;
+    coordinates?: {
+      lat: number;
+      lng: number;
+    };
+  };
+  pricing?: {
+    hourly?: number;
+    daily?: number;
+    monthly?: number;
+    priceBreakdown?: string;
   };
   averageRating?: number;
   reviewCount?: number;
+  responseSpeed?: number | null;
+  repeatBookings?: number;
+  reliability?: number;
+  distance?: number | null;
   aiMatch?: {
     score: number;
     explanation: string;
@@ -687,115 +713,190 @@ export default function GuardiansPage() {
               const isSaved = savedGuardianIds.has(guardian._id);
               
               return (
-                <Card key={guardian._id} className="overflow-hidden hover:shadow-medium dark:hover:shadow-dark-medium transition-all duration-300 group">
+                <Card key={guardian._id} className="group relative overflow-hidden border-2 border-border/50 dark:border-border-dark/50 hover:border-primary/30 dark:hover:border-primary-dark-mode/30 hover:shadow-lg dark:hover:shadow-dark-lg transition-all duration-300 bg-background dark:bg-background-dark">
                   <CardContent className="p-0">
                     <div className="relative">
                       {/* This Week Availability Strip */}
-                      <div className={`h-1 w-full ${
+                      <div className={`h-1.5 w-full ${
                         availabilityStatus === 'high' ? 'bg-success' :
                         availabilityStatus === 'medium' ? 'bg-warning' :
                         'bg-error'
                       }`} />
                       
-                      {guardian.profilePhoto ? (
-                        <img
-                          src={guardian.profilePhoto}
-                          alt={guardian.name}
-                          className="h-48 w-full object-cover"
-                        />
-                      ) : (
-                        <div className="flex h-48 items-center justify-center bg-primary/10 dark:bg-primary-dark-mode/20">
-                          <span className="text-4xl text-primary dark:text-primary-dark-mode">
-                            {guardian.name.charAt(0).toUpperCase()}
-                          </span>
-                        </div>
-                      )}
-                      <div className="absolute right-2 top-2 flex flex-col gap-2 items-end">
-                        {guardian.aiMatch?.isRecommended && (
-                          <AIBadge
-                            explanation={guardian.aiMatch.explanation}
-                            reasons={guardian.aiMatch.reasons}
-                            score={guardian.aiMatch.score}
+                      {/* Profile Photo with Gradient Overlay */}
+                      <div className="relative h-56 w-full overflow-hidden bg-gradient-to-br from-primary/20 via-sage/10 to-secondary/5 dark:from-primary-dark-mode/20 dark:via-sage-dark-mode/10 dark:to-secondary-dark-mode/5">
+                        {guardian.profilePhoto ? (
+                          <img
+                            src={guardian.profilePhoto}
+                            alt={guardian.name}
+                            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                           />
-                        )}
-                        {guardian.isVerified && (
-                          <Badge
-                            variant="success"
-                            className="flex items-center gap-1"
-                          >
-                            <Shield className="h-3 w-3" />
-                            Verified
-                          </Badge>
-                        )}
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="absolute right-2 top-2 h-8 w-8 rounded-full bg-background/90 dark:bg-background-dark/90 hover:bg-background dark:hover:bg-background-dark shadow-sm"
-                        onClick={() => toggleSaveGuardian(guardian._id)}
-                      >
-                        <Heart
-                          className={`h-4 w-4 transition-colors ${
-                            isSaved
-                              ? 'fill-secondary text-secondary dark:fill-secondary-dark-mode dark:text-secondary-dark-mode'
-                              : 'text-text-muted dark:text-text-dark-muted'
-                          }`}
-                        />
-                      </Button>
-                    </div>
-                    <div className="p-3 sm:p-4">
-                      <h3 className="mb-2 text-lg font-semibold text-text dark:text-text-dark sm:text-xl transition-colors">
-                        {guardian.name}
-                      </h3>
-                      <div className="mb-2 flex flex-wrap gap-1">
-                        {guardian.specialization.slice(0, 2).map((spec, idx) => (
-                          <Badge key={idx} variant="outline" className="text-xs">
-                            {spec}
-                          </Badge>
-                        ))}
-                        {guardian.specialization.length > 2 && (
-                          <Badge variant="outline" className="text-xs">
-                            +{guardian.specialization.length - 2}
-                          </Badge>
-                        )}
-                      </div>
-                      <div className="mb-2 flex flex-wrap items-center gap-3 text-xs text-text-muted dark:text-text-dark-light sm:text-sm sm:gap-4 transition-colors">
-                        <span>{guardian.experience} years experience</span>
-                        {guardian.averageRating ? (
-                          <div className="flex items-center gap-1">
-                            <StarRating
-                              rating={guardian.averageRating}
-                              readonly
-                              size="sm"
-                            />
-                            <span className="text-xs">
-                              {guardian.averageRating.toFixed(1)} ({guardian.reviewCount || 0})
+                        ) : (
+                          <div className="flex h-full items-center justify-center">
+                            <span className="text-5xl font-bold text-primary dark:text-primary-dark-mode transition-colors">
+                              {guardian.name.charAt(0).toUpperCase()}
                             </span>
                           </div>
-                        ) : (
-                          <Badge variant="outline" className="text-xs">
-                            New Guardian
-                          </Badge>
                         )}
-                      </div>
-                      {guardian.location?.city && (
-                        <div className="mb-3 flex items-center gap-1 text-xs text-text-muted dark:text-text-dark-light sm:mb-4 sm:text-sm transition-colors">
-                          <MapPin className="h-3 w-3 sm:h-4 sm:w-4" />
-                          {guardian.location.city} • {guardian.serviceRadius} km radius
-                          {guardian.distance !== null && vitalLocation && (
-                            <span className="ml-1 font-semibold text-primary">
-                              • {formatDistance(guardian.distance)}
-                            </span>
+                        {/* Gradient Overlay */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent dark:from-background-dark/80" />
+                        
+                        {/* Top Right Badges */}
+                        <div className="absolute right-3 top-3 flex flex-col gap-2 items-end z-10">
+                          {guardian.aiMatch?.isRecommended && (
+                            <AIBadge
+                              explanation={guardian.aiMatch.explanation}
+                              reasons={guardian.aiMatch.reasons}
+                              score={guardian.aiMatch.score}
+                            />
+                          )}
+                          {guardian.isVerified && (
+                            <Badge
+                              variant="success"
+                              className="flex items-center gap-1.5 px-2.5 py-1 shadow-md backdrop-blur-sm bg-success/90 text-white border-0"
+                            >
+                              <Shield className="h-3.5 w-3.5" />
+                              <span className="text-xs font-semibold">Verified</span>
+                            </Badge>
                           )}
                         </div>
-                      )}
-                      <div className="flex gap-2">
-                        <Link href={`/vital/guardians/${guardian._id}`} className="flex-1">
-                          <Button className="w-full text-xs sm:text-sm" size="sm">
-                            View Details
+                        
+                        {/* Save Button */}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="absolute left-3 top-3 z-10 h-9 w-9 rounded-full bg-background/95 dark:bg-background-dark/95 hover:bg-background dark:hover:bg-background-dark shadow-lg backdrop-blur-sm border border-border/50 dark:border-border-dark/50 transition-all hover:scale-110"
+                          onClick={() => toggleSaveGuardian(guardian._id)}
+                          aria-label={isSaved ? 'Remove from saved' : 'Save guardian'}
+                        >
+                          <Heart
+                            className={`h-4 w-4 transition-all ${
+                              isSaved
+                                ? 'fill-secondary text-secondary dark:fill-secondary-dark-mode dark:text-secondary-dark-mode scale-110'
+                                : 'text-text-muted dark:text-text-dark-muted'
+                            }`}
+                          />
+                        </Button>
+                      </div>
+                    </div>
+                      
+                    {/* Card Content - Simplified for Discovery View */}
+                    <div className="p-4 sm:p-5">
+                        {/* Name and Rating Row */}
+                        <div className="mb-2.5 flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <h3 className="mb-1 text-lg font-bold text-text dark:text-text-dark sm:text-xl transition-colors line-clamp-1">
+                              {guardian.name}
+                            </h3>
+                            {guardian.averageRating ? (
+                              <div className="flex items-center gap-1.5">
+                                <StarRating
+                                  rating={guardian.averageRating}
+                                  readonly
+                                  size="sm"
+                                />
+                                <span className="text-sm font-semibold text-text dark:text-text-dark transition-colors">
+                                  {guardian.averageRating.toFixed(1)}
+                                </span>
+                                <span className="text-xs text-text-muted dark:text-text-dark-muted transition-colors">
+                                  ({guardian.reviewCount || 0})
+                                </span>
+                              </div>
+                            ) : (
+                              <Badge variant="outline" className="mt-1 text-xs">
+                                {t('guardians.new')}
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                        
+                        {/* Top 2-3 Care Tags Only */}
+                        {featureFlags.ADVANCED_GUARDIAN_PROFILE && guardian.careTags && guardian.careTags.length > 0 && (
+                          <div className="mb-2.5 flex flex-wrap gap-1.5">
+                            {guardian.careTags.slice(0, 3).map((tag, idx) => (
+                              <Badge 
+                                key={idx} 
+                                variant="default" 
+                                className="text-xs font-medium bg-primary/15 text-primary border border-primary/30 dark:bg-primary-dark-mode/15 dark:text-primary-dark-mode dark:border-primary-dark-mode/30 px-2 py-0.5"
+                              >
+                                {tag}
+                              </Badge>
+                            ))}
+                            {guardian.careTags.length > 3 && (
+                              <Badge variant="outline" className="text-xs px-2 py-0.5">
+                                +{guardian.careTags.length - 3}
+                              </Badge>
+                            )}
+                          </div>
+                        )}
+                        
+                        {/* Essential Info - Compact */}
+                        <div className="mb-2.5 space-y-1.5">
+                          {/* Starting Price */}
+                          {featureFlags.PRICING_SYSTEM && guardian.pricing && (
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-sm font-bold text-secondary dark:text-secondary-dark-mode transition-colors">
+                                {guardian.pricing.hourly ? (
+                                  <>From ₹{guardian.pricing.hourly}/hr</>
+                                ) : guardian.pricing.daily ? (
+                                  <>From ₹{guardian.pricing.daily}/day</>
+                                ) : guardian.pricing.monthly ? (
+                                  <>From ₹{guardian.pricing.monthly}/month</>
+                                ) : (
+                                  <span className="text-xs text-text-muted dark:text-text-dark-muted">
+                                    {t('form.pricing.availableOnRequest')}
+                                  </span>
+                                )}
+                              </span>
+                            </div>
+                          )}
+                          
+                          {/* Availability Status */}
+                          {featureFlags.ADVANCED_GUARDIAN_PROFILE && (() => {
+                            const availStatus = getAvailabilityStatus(guardian.availability);
+                            if (availStatus.today === 'Available') {
+                              return (
+                                <div className="flex items-center gap-1.5">
+                                  <Badge variant="outline" className="text-xs bg-success/10 text-success border-success/30 font-medium">
+                                    {t('guardians.availableToday')}
+                                  </Badge>
+                                </div>
+                              );
+                            } else if (availStatus.tomorrow === 'Available') {
+                              return (
+                                <div className="flex items-center gap-1.5">
+                                  <Badge variant="outline" className="text-xs bg-warning/10 text-warning border-warning/30 font-medium">
+                                    {t('guardians.availableTomorrow')}
+                                  </Badge>
+                                </div>
+                              );
+                            }
+                            return null;
+                          })()}
+                          
+                          {/* Distance */}
+                          {guardian.distance !== null && vitalLocation && (
+                            <div className="flex items-center gap-1.5 text-xs text-text-muted dark:text-text-dark-muted">
+                              <MapPin className="h-3 w-3" />
+                              <span>{formatDistance(guardian.distance)} {t('guardians.away')}</span>
+                            </div>
+                          )}
+                          
+                          {/* Optional: Response Speed (1 line max) */}
+                          {featureFlags.ADVANCED_GUARDIAN_PROFILE && guardian.responseSpeed !== null && guardian.responseSpeed !== undefined && (
+                            <div className="flex items-center gap-1.5 text-xs text-text-muted dark:text-text-dark-muted">
+                              <ClockIcon className="h-3 w-3" />
+                              <span className="line-clamp-1">{formatResponseSpeed(guardian.responseSpeed)}</span>
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* Primary CTA: Book Service */}
+                        <Link href={`/vital/guardians/${guardian._id}`} className="block">
+                          <Button className="w-full font-semibold shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-200 group-hover:bg-primary group-hover:text-white" size="sm">
+                            {t('vital.book')}
                           </Button>
                         </Link>
-                      </div>
                     </div>
                   </CardContent>
                 </Card>

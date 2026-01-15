@@ -6,14 +6,22 @@ export interface IGuardianProfile extends Document {
   age: number;
   gender: string;
   experience: number; // years
+  experienceBreakdown?: Array<{ // NEW: Experience breakdown
+    years: number;
+    type: string;
+  }>;
   specialization: string[];
+  careTags?: string[]; // NEW: Care type tags (Elderly Care, Post-Surgery, etc.)
+  introduction?: string; // NEW: Human introduction (max 3 lines)
   availability: {
     days: string[];
     hours: {
       start: string;
       end: string;
     };
+    shiftType?: 'Morning' | 'Night' | '24×7'; // NEW: Shift type
   };
+  languages?: string[]; // NEW: Languages spoken
   serviceRadius: number; // km
   location: {
     city: string;
@@ -25,6 +33,18 @@ export interface IGuardianProfile extends Document {
   certifications: string[]; // Cloudinary URLs
   profilePhoto?: string;
   isVerified: boolean;
+  verificationBadges?: { // NEW: Layered verification badges
+    idVerified: boolean;
+    certificationUploaded: boolean;
+    highlyRated: boolean;
+    repeatBookings: boolean;
+  };
+  pricing?: { // NEW: Pricing model
+    hourly?: number;
+    daily?: number;
+    monthly?: number;
+    priceBreakdown?: string; // Optional description of what's included
+  };
   createdAt: Date;
   updatedAt: Date;
 }
@@ -66,6 +86,22 @@ const GuardianProfileSchema = new Schema<IGuardianProfile>(
         message: 'At least one specialization is required',
       },
     },
+    careTags: {
+      type: [String],
+      default: [],
+    },
+    introduction: {
+      type: String,
+      trim: true,
+      maxlength: [300, 'Introduction must be less than 300 characters'],
+    },
+    experienceBreakdown: {
+      type: [{
+        years: { type: Number, required: true, min: 0 },
+        type: { type: String, required: true, trim: true },
+      }],
+      default: [],
+    },
     availability: {
       days: {
         type: [String],
@@ -82,6 +118,14 @@ const GuardianProfileSchema = new Schema<IGuardianProfile>(
           required: true,
         },
       },
+      shiftType: {
+        type: String,
+        enum: ['Morning', 'Night', '24×7'],
+      },
+    },
+    languages: {
+      type: [String],
+      default: [],
     },
     serviceRadius: {
       type: Number,
@@ -111,6 +155,18 @@ const GuardianProfileSchema = new Schema<IGuardianProfile>(
       type: Boolean,
       default: false,
     },
+    verificationBadges: {
+      idVerified: { type: Boolean, default: false },
+      certificationUploaded: { type: Boolean, default: false },
+      highlyRated: { type: Boolean, default: false },
+      repeatBookings: { type: Boolean, default: false },
+    },
+    pricing: {
+      hourly: { type: Number, min: 0 },
+      daily: { type: Number, min: 0 },
+      monthly: { type: Number, min: 0 },
+      priceBreakdown: { type: String, trim: true, maxlength: [500, 'Price breakdown must be less than 500 characters'] },
+    },
   },
   {
     timestamps: true,
@@ -120,12 +176,14 @@ const GuardianProfileSchema = new Schema<IGuardianProfile>(
 // Indexes for search
 GuardianProfileSchema.index({ userId: 1 });
 GuardianProfileSchema.index({ specialization: 1 });
+GuardianProfileSchema.index({ careTags: 1 }); // NEW: Index for care tags
+GuardianProfileSchema.index({ languages: 1 }); // NEW: Index for languages
 GuardianProfileSchema.index({ isVerified: 1 });
 GuardianProfileSchema.index({ 'location.city': 1 });
 GuardianProfileSchema.index({ 'location.coordinates': '2dsphere' });
 
 const GuardianProfile: Model<IGuardianProfile> =
-  mongoose.models.GuardianProfile ||
+  (mongoose.models && mongoose.models.GuardianProfile) ||
   mongoose.model<IGuardianProfile>('GuardianProfile', GuardianProfileSchema);
 
 export default GuardianProfile;

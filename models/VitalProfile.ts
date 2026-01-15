@@ -85,7 +85,7 @@ VitalProfileSchema.index({ 'location.city': 1 });
 VitalProfileSchema.index({ 'location.coordinates': '2dsphere' });
 
 const VitalProfile: Model<IVitalProfile> =
-  mongoose.models.VitalProfile || mongoose.model<IVitalProfile>('VitalProfile', VitalProfileSchema);
+  (mongoose.models && mongoose.models.VitalProfile) || mongoose.model<IVitalProfile>('VitalProfile', VitalProfileSchema);
 
 export default VitalProfile;
 

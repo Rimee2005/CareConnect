@@ -2,6 +2,7 @@ import GuardianProfile from '@/models/GuardianProfile';
 import { calculateGuardianRating, calculateCompletionReliability } from './ratings';
 import { calculateDistance } from './utils';
 import { featureFlags } from './feature-flags';
+import { calculateResponseSpeed, calculateRepeatBookings, calculateReliabilityScore } from './guardian-metrics';
 
 export interface AIMatchScore {
   guardianId: string;
@@ -92,16 +93,21 @@ async function calculateMatchScore(
     }
   }
 
-  // 3. Specialization Match (0-20 points)
-  if (input.vitalHealthTags && guardian.specialization) {
+  // 3. Specialization & Care Tags Match (0-20 points)
+  const allGuardianTags = [
+    ...(guardian.specialization || []),
+    ...(guardian.careTags || []),
+  ];
+  
+  if (input.vitalHealthTags && allGuardianTags.length > 0) {
     const matchingTags = input.vitalHealthTags.filter((tag) =>
-      guardian.specialization.some((spec: string) =>
+      allGuardianTags.some((spec: string) =>
         spec.toLowerCase().includes(tag.toLowerCase()) ||
         tag.toLowerCase().includes(spec.toLowerCase())
       )
     );
     if (matchingTags.length > 0) {
-      const matchScore = (matchingTags.length / Math.max(input.vitalHealthTags.length, guardian.specialization.length)) * 20;
+      const matchScore = (matchingTags.length / Math.max(input.vitalHealthTags.length, allGuardianTags.length)) * 20;
       score += matchScore;
       reasons.push(`Matches your health needs: ${matchingTags[0]}`);
     }
@@ -120,6 +126,52 @@ async function calculateMatchScore(
   score += reliabilityScore;
   if (reliability >= 90) {
     reasons.push('High completion rate');
+  }
+
+  // 6. Response Speed (0-5 points) - NEW
+  const responseSpeed = await calculateResponseSpeed(guardian._id.toString());
+  if (responseSpeed !== null) {
+    if (responseSpeed < 15) {
+      score += 5;
+      reasons.push('Very responsive');
+    } else if (responseSpeed < 60) {
+      score += 3;
+      reasons.push('Quick response time');
+    } else if (responseSpeed < 1440) {
+      score += 1;
+    }
+  }
+
+  // 7. Repeat Bookings (0-5 points) - NEW
+  const repeatBookings = await calculateRepeatBookings(guardian._id.toString());
+  if (repeatBookings > 0) {
+    const repeatScore = Math.min(repeatBookings / 5, 1) * 5;
+    score += repeatScore;
+    if (repeatBookings >= 10) {
+      reasons.push(`Booked again by ${repeatBookings}+ families`);
+    } else if (repeatBookings >= 5) {
+      reasons.push(`Trusted by ${repeatBookings}+ repeat families`);
+    }
+  }
+
+  // 8. Languages Match (0-3 points) - NEW
+  if (guardian.languages && guardian.languages.length > 0) {
+    // If languages are specified, add a small bonus for multilingual guardians
+    score += Math.min(guardian.languages.length * 0.5, 3);
+    if (guardian.languages.length >= 3) {
+      reasons.push('Multilingual support');
+    }
+  }
+
+  // 9. Pricing Value (0-5 points) - NEW (only if pricing system enabled)
+  if (featureFlags.PRICING_SYSTEM && guardian.pricing) {
+    // Consider price vs experience/rating balance
+    const hasPricing = guardian.pricing.hourly || guardian.pricing.daily || guardian.pricing.monthly;
+    if (hasPricing) {
+      // Add small bonus for having transparent pricing
+      score += 1;
+      reasons.push('Transparent pricing');
+    }
   }
 
   // Generate explanation

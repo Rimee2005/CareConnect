@@ -8,6 +8,7 @@ import { Navbar } from '@/components/Navbar';
 import { Heart, Shield, Clock, Users, CheckCircle, Lock, Headphones, Star, ArrowRight } from 'lucide-react';
 import { featureFlags } from '@/lib/feature-flags';
 import { motion } from 'framer-motion';
+import { useTranslation } from '@/lib/i18n';
 
 // Enhanced Animation variants
 const fadeInUp = {
@@ -55,6 +56,8 @@ const floatAnimation = {
 };
 
 export default function HomePage() {
+  const { t } = useTranslation();
+  
   return (
     <div className="min-h-screen bg-background dark:bg-background-dark transition-colors">
       <Navbar />
@@ -86,7 +89,7 @@ export default function HomePage() {
               variants={fadeInUp}
               className="mb-6 text-4xl font-bold leading-tight text-text dark:text-text-dark sm:text-5xl sm:mb-8 md:text-6xl md:leading-tight transition-colors"
             >
-              Care with compassion,<br className="hidden sm:block" /> anytime, anywhere.
+              {t('home.hero.title')}
             </motion.h1>
             <motion.p
               initial="initial"
@@ -94,7 +97,7 @@ export default function HomePage() {
               variants={fadeInUp}
               className="mb-8 text-lg leading-relaxed text-text-light dark:text-text-dark-light sm:text-xl sm:mb-10 md:text-2xl md:mb-12 transition-colors"
             >
-              Connecting Vitals with compassionate Guardians for quality healthcare
+              {t('home.hero.subtitle')}
             </motion.p>
 
             {/* Trust Indicators */}
@@ -106,15 +109,15 @@ export default function HomePage() {
             >
               <motion.div variants={scaleIn} className="flex items-center gap-2 rounded-full bg-white/60 px-4 py-2 backdrop-blur-sm dark:bg-background-dark-secondary/60">
                 <Shield className="h-4 w-4 text-primary dark:text-primary-dark-mode sm:h-5 sm:w-5 transition-colors" />
-                <span className="text-sm font-medium text-text dark:text-text-dark sm:text-base transition-colors">Verified Guardians</span>
+                <span className="text-sm font-medium text-text dark:text-text-dark sm:text-base transition-colors">{t('home.hero.trust.verified')}</span>
               </motion.div>
               <motion.div variants={scaleIn} className="flex items-center gap-2 rounded-full bg-white/60 px-4 py-2 backdrop-blur-sm dark:bg-background-dark-secondary/60">
                 <Lock className="h-4 w-4 text-primary dark:text-primary-dark-mode sm:h-5 sm:w-5 transition-colors" />
-                <span className="text-sm font-medium text-text dark:text-text-dark sm:text-base transition-colors">Secure Bookings</span>
+                <span className="text-sm font-medium text-text dark:text-text-dark sm:text-base transition-colors">{t('home.hero.trust.secure')}</span>
               </motion.div>
               <motion.div variants={scaleIn} className="flex items-center gap-2 rounded-full bg-white/60 px-4 py-2 backdrop-blur-sm dark:bg-background-dark-secondary/60">
                 <Clock className="h-4 w-4 text-primary dark:text-primary-dark-mode sm:h-5 sm:w-5 transition-colors" />
-                <span className="text-sm font-medium text-text dark:text-text-dark sm:text-base transition-colors">24/7 Support</span>
+                <span className="text-sm font-medium text-text dark:text-text-dark sm:text-base transition-colors">{t('home.hero.trust.support')}</span>
               </motion.div>
             </motion.div>
 
@@ -137,13 +140,13 @@ export default function HomePage() {
                     whileTap={{ scale: 0.95 }}
                   >
                     <Button size="lg" className="w-full text-base shadow-medium hover:shadow-lg transition-all sm:text-lg group">
-                      I am a Vital
+                      {t('home.hero.cta.vital')}
                       <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
                     </Button>
                   </motion.div>
                 </Link>
                 <p className="mt-2 text-xs text-text-muted dark:text-text-dark-muted sm:text-sm transition-colors">
-                  Looking for compassionate care
+                  {t('home.hero.cta.vital.desc')}
                 </p>
               </motion.div>
               <motion.div
@@ -158,13 +161,13 @@ export default function HomePage() {
                     whileTap={{ scale: 0.95 }}
                   >
                     <Button size="lg" variant="secondary" className="w-full text-base shadow-medium hover:shadow-lg transition-all sm:text-lg group">
-                      I am a Guardian
+                      {t('home.hero.cta.guardian')}
                       <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
                     </Button>
                   </motion.div>
                 </Link>
                 <p className="mt-2 text-xs text-text-muted dark:text-text-dark-muted sm:text-sm transition-colors">
-                  Ready to provide quality care
+                  {t('home.hero.cta.guardian.desc')}
                 </p>
               </motion.div>
             </motion.div>
@@ -182,10 +185,10 @@ export default function HomePage() {
             variants={fadeInUp}
           >
             <h2 className="mb-4 text-center text-3xl font-bold text-text dark:text-text-dark sm:text-4xl sm:mb-6 md:text-5xl transition-colors">
-              How it Works
+              {t('home.howItWorks.title')}
             </h2>
             <p className="mx-auto mb-12 max-w-2xl text-center text-base text-text-light dark:text-text-dark-light sm:text-lg md:mb-16 transition-colors">
-              Three simple steps to connect with compassionate care
+              {t('home.howItWorks.subtitle')}
             </p>
           </motion.div>
 
@@ -210,12 +213,12 @@ export default function HomePage() {
                     >
                       <Users className="h-10 w-10 text-primary dark:text-primary-dark-mode sm:h-12 sm:w-12 transition-colors" />
                     </motion.div>
-                  <CardTitle className="mb-3 text-xl font-bold text-text dark:text-text-dark sm:text-2xl transition-colors">
-                    1. Create Profile
-                  </CardTitle>
-                  <CardDescription className="text-base leading-relaxed text-text-light dark:text-text-dark-light sm:text-lg transition-colors">
-                    Sign up as a Vital or Guardian and create your detailed profile with all the information needed for a perfect match.
-                  </CardDescription>
+                    <CardTitle className="mb-3 text-xl font-bold text-text dark:text-text-dark sm:text-2xl transition-colors">
+                      {t('home.howItWorks.step1.title')}
+                    </CardTitle>
+                    <CardDescription className="text-base leading-relaxed text-text-light dark:text-text-dark-light sm:text-lg transition-colors">
+                      {t('home.howItWorks.step1.desc')}
+                    </CardDescription>
                 </CardHeader>
               </Card>
               </motion.div>
@@ -235,12 +238,12 @@ export default function HomePage() {
                     >
                       <Heart className="h-10 w-10 text-secondary dark:text-secondary-dark-mode sm:h-12 sm:w-12 transition-colors" />
                     </motion.div>
-                  <CardTitle className="mb-3 text-xl font-bold text-text dark:text-text-dark sm:text-2xl transition-colors">
-                    2. Connect
-                  </CardTitle>
-                  <CardDescription className="text-base leading-relaxed text-text-light dark:text-text-dark-light sm:text-lg transition-colors">
-                    Browse and connect with verified Guardians or receive booking requests from Vitals seeking your expertise.
-                  </CardDescription>
+                    <CardTitle className="mb-3 text-xl font-bold text-text dark:text-text-dark sm:text-2xl transition-colors">
+                      {t('home.howItWorks.step2.title')}
+                    </CardTitle>
+                    <CardDescription className="text-base leading-relaxed text-text-light dark:text-text-dark-light sm:text-lg transition-colors">
+                      {t('home.howItWorks.step2.desc')}
+                    </CardDescription>
                 </CardHeader>
               </Card>
               </motion.div>
@@ -261,10 +264,10 @@ export default function HomePage() {
                       <Shield className="h-10 w-10 text-sage dark:text-sage-dark-mode sm:h-12 sm:w-12 transition-colors" />
                     </motion.div>
                     <CardTitle className="mb-3 text-xl font-bold text-text dark:text-text-dark sm:text-2xl transition-colors">
-                      3. Care
+                      {t('home.howItWorks.step3.title')}
                     </CardTitle>
                     <CardDescription className="text-base leading-relaxed text-text-light dark:text-text-dark-light sm:text-lg transition-colors">
-                      Receive compassionate care or provide quality healthcare services with trust, transparency, and peace of mind.
+                      {t('home.howItWorks.step3.desc')}
                     </CardDescription>
                   </CardHeader>
                 </Card>
@@ -314,10 +317,10 @@ export default function HomePage() {
                       <Shield className="h-8 w-8 text-primary dark:text-primary-dark-mode sm:h-10 sm:w-10 transition-colors" />
                     </motion.div>
                   <CardTitle className="mb-2 text-lg font-bold text-text dark:text-text-dark sm:text-xl transition-colors">
-                    Verification
+                    {t('home.why.verification.title')}
                   </CardTitle>
                   <CardDescription className="text-sm leading-relaxed text-text-light dark:text-text-dark-light sm:text-base transition-colors">
-                    Every Guardian undergoes thorough background checks and credential verification
+                    {t('home.why.verification.desc')}
                   </CardDescription>
                 </CardHeader>
               </Card>
@@ -339,10 +342,10 @@ export default function HomePage() {
                       <Lock className="h-8 w-8 text-sage dark:text-sage-dark-mode sm:h-10 sm:w-10 transition-colors" />
                     </motion.div>
                   <CardTitle className="mb-2 text-lg font-bold text-text dark:text-text-dark sm:text-xl transition-colors">
-                    Safety & Privacy
+                    {t('home.why.safety.title')}
                   </CardTitle>
                   <CardDescription className="text-sm leading-relaxed text-text-light dark:text-text-dark-light sm:text-base transition-colors">
-                    Enterprise-grade security protects your data and ensures safe, private interactions
+                    {t('home.why.safety.desc')}
                   </CardDescription>
                 </CardHeader>
               </Card>
@@ -364,10 +367,10 @@ export default function HomePage() {
                       <Headphones className="h-8 w-8 text-secondary dark:text-secondary-dark-mode sm:h-10 sm:w-10 transition-colors" />
                     </motion.div>
                   <CardTitle className="mb-2 text-lg font-bold text-text dark:text-text-dark sm:text-xl transition-colors">
-                    Human Support
+                    {t('home.why.support.title')}
                   </CardTitle>
                   <CardDescription className="text-sm leading-relaxed text-text-light dark:text-text-dark-light sm:text-base transition-colors">
-                    Our support team is available 24/7 to help you with any questions or concerns
+                    {t('home.why.support.desc')}
                   </CardDescription>
                 </CardHeader>
               </Card>
@@ -389,10 +392,10 @@ export default function HomePage() {
                       <CheckCircle className="h-8 w-8 text-primary dark:text-primary-dark-mode sm:h-10 sm:w-10 transition-colors" />
                     </motion.div>
                     <CardTitle className="mb-2 text-lg font-bold text-text dark:text-text-dark sm:text-xl transition-colors">
-                      Transparent Reviews
+                      {t('home.why.reviews.title')}
                     </CardTitle>
                     <CardDescription className="text-sm leading-relaxed text-text-light dark:text-text-dark-light sm:text-base transition-colors">
-                      Read authentic reviews from real Vitals to make informed decisions
+                      {t('home.why.reviews.desc')}
                     </CardDescription>
                   </CardHeader>
                 </Card>
@@ -407,7 +410,7 @@ export default function HomePage() {
         <section className="py-16 sm:py-20 md:py-24">
           <div className="container mx-auto px-4 sm:px-6">
             <h2 className="mb-12 text-center text-3xl font-bold text-text dark:text-text-dark sm:text-4xl md:mb-16 transition-colors">
-              Coming Soon
+              {t('home.comingSoon.title')}
             </h2>
             <div className="grid gap-8 sm:grid-cols-2">
               {featureFlags.SOS_EMERGENCY && (
@@ -479,7 +482,7 @@ export default function HomePage() {
                     </div>
                   </div>
                   <p className="mb-4 flex-1 text-sm italic leading-relaxed text-text dark:text-text-dark sm:text-base transition-colors">
-                    "CareConnect helped me find the perfect caregiver for my mother. The platform is easy to use and the Guardians are truly compassionate. I couldn't be happier with the service."
+                    "{t('home.testimonials.priya')}"
                   </p>
                 </CardContent>
               </Card>
@@ -509,7 +512,7 @@ export default function HomePage() {
                     </div>
                   </div>
                   <p className="mb-4 flex-1 text-sm italic leading-relaxed text-text dark:text-text-dark sm:text-base transition-colors">
-                    "As a Guardian, I love how organized the booking system is. It makes managing my care services so much easier."
+                    "{t('home.testimonials.rajesh')}"
                   </p>
                 </CardContent>
               </Card>
@@ -539,7 +542,7 @@ export default function HomePage() {
                     </div>
                   </div>
                   <p className="mb-4 flex-1 text-sm italic leading-relaxed text-text dark:text-text-dark sm:text-base transition-colors">
-                    "The verification system gives me peace of mind. I know I'm connecting with trusted professionals who truly care about their work."
+                    "{t('home.testimonials.anjali')}"
                   </p>
                 </CardContent>
               </Card>

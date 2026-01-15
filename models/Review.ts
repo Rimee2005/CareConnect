@@ -60,7 +60,7 @@ ReviewSchema.index({ bookingId: 1 });
 ReviewSchema.index({ createdAt: -1 });
 
 const Review: Model<IReview> =
-  mongoose.models.Review || mongoose.model<IReview>('Review', ReviewSchema);
+  (mongoose.models && mongoose.models.Review) || mongoose.model<IReview>('Review', ReviewSchema);
 
 export default Review;
 

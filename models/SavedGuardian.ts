@@ -30,7 +30,7 @@ SavedGuardianSchema.index({ vitalId: 1 });
 SavedGuardianSchema.index({ guardianId: 1 });
 
 const SavedGuardian: Model<ISavedGuardian> =
-  mongoose.models.SavedGuardian || mongoose.model<ISavedGuardian>('SavedGuardian', SavedGuardianSchema);
+  (mongoose.models && mongoose.models.SavedGuardian) || mongoose.model<ISavedGuardian>('SavedGuardian', SavedGuardianSchema);
 
 export default SavedGuardian;
 

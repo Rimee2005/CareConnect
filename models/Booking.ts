@@ -54,7 +54,7 @@ BookingSchema.index({ status: 1 });
 BookingSchema.index({ createdAt: -1 });
 
 const Booking: Model<IBooking> =
-  mongoose.models.Booking || mongoose.model<IBooking>('Booking', BookingSchema);
+  (mongoose.models && mongoose.models.Booking) || mongoose.model<IBooking>('Booking', BookingSchema);
 
 export default Booking;
 

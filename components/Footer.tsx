@@ -2,9 +2,11 @@
 
 import Link from 'next/link';
 import { Heart, Mail, Phone, MapPin, Facebook, Twitter, Instagram, Linkedin } from 'lucide-react';
+import { useTranslation } from '@/lib/i18n';
 import { motion } from 'framer-motion';
 
 export function Footer() {
+  const { t } = useTranslation();
   const currentYear = new Date().getFullYear();
 
   const footerLinks = {
@@ -47,7 +49,7 @@ export function Footer() {
               </h3>
             </Link>
             <p className="mb-6 max-w-sm text-sm leading-relaxed text-text dark:text-text-dark">
-              Care with compassion, anytime, anywhere. Connecting Vitals with compassionate Guardians for quality healthcare.
+              {t('footer.description')}
             </p>
             
             {/* Contact Info */}
@@ -93,57 +95,123 @@ export function Footer() {
           {/* Product Links */}
           <div>
             <h4 className="mb-4 text-sm font-semibold uppercase tracking-wider text-text dark:text-text-dark">
-              Product
+              {t('footer.product.title')}
             </h4>
             <ul className="space-y-3">
-              {footerLinks.product.map((link) => (
-                <li key={link.name}>
-                  <Link
-                    href={link.href}
-                    className="text-sm text-text hover:text-primary dark:text-text-dark dark:hover:text-primary-dark-mode transition-colors"
-                  >
-                    {link.name}
-                  </Link>
-                </li>
-              ))}
+              <li>
+                <Link
+                  href="/auth/register?role=VITAL"
+                  className="text-sm text-text hover:text-primary dark:text-text-dark dark:hover:text-primary-dark-mode transition-colors"
+                >
+                  {t('footer.product.forVitals')}
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/auth/register?role=GUARDIAN"
+                  className="text-sm text-text hover:text-primary dark:text-text-dark dark:hover:text-primary-dark-mode transition-colors"
+                >
+                  {t('footer.product.forGuardians')}
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/#how-it-works"
+                  className="text-sm text-text hover:text-primary dark:text-text-dark dark:hover:text-primary-dark-mode transition-colors"
+                >
+                  {t('footer.product.howItWorks')}
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/#pricing"
+                  className="text-sm text-text hover:text-primary dark:text-text-dark dark:hover:text-primary-dark-mode transition-colors"
+                >
+                  {t('footer.product.pricing')}
+                </Link>
+              </li>
             </ul>
           </div>
 
           {/* Company Links */}
           <div>
             <h4 className="mb-4 text-sm font-semibold uppercase tracking-wider text-text dark:text-text-dark">
-              Company
+              {t('footer.company.title')}
             </h4>
             <ul className="space-y-3">
-              {footerLinks.company.map((link) => (
-                <li key={link.name}>
-                  <Link
-                    href={link.href}
-                    className="text-sm text-text hover:text-primary dark:text-text-dark dark:hover:text-primary-dark-mode transition-colors"
-                  >
-                    {link.name}
-                  </Link>
-                </li>
-              ))}
+              <li>
+                <Link
+                  href="/about"
+                  className="text-sm text-text hover:text-primary dark:text-text-dark dark:hover:text-primary-dark-mode transition-colors"
+                >
+                  {t('footer.company.about')}
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/#careers"
+                  className="text-sm text-text hover:text-primary dark:text-text-dark dark:hover:text-primary-dark-mode transition-colors"
+                >
+                  {t('footer.company.careers')}
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/#blog"
+                  className="text-sm text-text hover:text-primary dark:text-text-dark dark:hover:text-primary-dark-mode transition-colors"
+                >
+                  {t('footer.company.blog')}
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/#press"
+                  className="text-sm text-text hover:text-primary dark:text-text-dark dark:hover:text-primary-dark-mode transition-colors"
+                >
+                  {t('footer.company.press')}
+                </Link>
+              </li>
             </ul>
           </div>
 
           {/* Support Links */}
           <div>
             <h4 className="mb-4 text-sm font-semibold uppercase tracking-wider text-text dark:text-text-dark">
-              Support
+              {t('footer.support.title')}
             </h4>
             <ul className="space-y-3">
-              {footerLinks.support.map((link) => (
-                <li key={link.name}>
-                  <Link
-                    href={link.href}
-                    className="text-sm text-text hover:text-primary dark:text-text-dark dark:hover:text-primary-dark-mode transition-colors"
-                  >
-                    {link.name}
-                  </Link>
-                </li>
-              ))}
+              <li>
+                <Link
+                  href="/#help"
+                  className="text-sm text-text hover:text-primary dark:text-text-dark dark:hover:text-primary-dark-mode transition-colors"
+                >
+                  {t('footer.support.help')}
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/#contact"
+                  className="text-sm text-text hover:text-primary dark:text-text-dark dark:hover:text-primary-dark-mode transition-colors"
+                >
+                  {t('footer.support.contact')}
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/#privacy"
+                  className="text-sm text-text hover:text-primary dark:text-text-dark dark:hover:text-primary-dark-mode transition-colors"
+                >
+                  {t('footer.support.privacy')}
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/#terms"
+                  className="text-sm text-text hover:text-primary dark:text-text-dark dark:hover:text-primary-dark-mode transition-colors"
+                >
+                  {t('footer.support.terms')}
+                </Link>
+              </li>
             </ul>
           </div>
         </div>
@@ -152,12 +220,12 @@ export function Footer() {
         <div className="mt-12 border-t border-border dark:border-border-dark pt-8">
           <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
             <p className="text-sm text-text dark:text-text-dark">
-              © {currentYear} CareConnect. All rights reserved.
+              © {currentYear} CareConnect. {t('footer.copyright')}
             </p>
             <div className="flex items-center gap-2 text-sm text-text dark:text-text-dark">
-              <span>Made with</span>
+              <span>{t('footer.madeWith')}</span>
               <Heart className="h-4 w-4 fill-secondary text-secondary dark:fill-secondary-dark-mode" />
-              <span>for healthcare</span>
+              <span>{t('footer.forHealthcare')}</span>
             </div>
           </div>
         </div>

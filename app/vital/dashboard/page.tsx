@@ -12,8 +12,6 @@ import { useTranslation } from '@/lib/i18n';
 import { featureFlags } from '@/lib/feature-flags';
 import { AlertCircle, Plus, Search, Calendar, MessageSquare, MapPin, Shield, Users } from 'lucide-react';
 import { StarRating } from '@/components/StarRating';
-import { LeafletMap } from '@/components/LeafletMap';
-import { useVitalLocation } from '@/hooks/useVitalLocation';
 import { calculateDistance } from '@/lib/utils';
 
 interface VitalProfile {
@@ -80,7 +78,6 @@ export default function VitalDashboardPage() {
   const [guardians, setGuardians] = useState<Guardian[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedGuardian, setSelectedGuardian] = useState<Guardian | null>(null);
-  const { vitalLocation } = useVitalLocation();
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -163,25 +160,6 @@ export default function VitalDashboardPage() {
     return 'low';
   };
 
-  // Filter nearest guardians for map view
-  const nearestGuardians = useMemo(() => {
-    if (!vitalLocation) return guardians;
-    
-    return guardians
-      .filter(guardian => guardian.location?.coordinates)
-      .map(guardian => {
-        const distance = calculateDistance(
-          vitalLocation.lat,
-          vitalLocation.lng,
-          guardian.location!.coordinates!.lat,
-          guardian.location!.coordinates!.lng
-        );
-        return { ...guardian, distance };
-      })
-      .sort((a, b) => (a.distance || Infinity) - (b.distance || Infinity))
-      .slice(0, 10) // Top 10 nearest
-      .map(({ distance, ...guardian }) => guardian); // Remove distance before passing to map
-  }, [guardians, vitalLocation]);
 
   if (status === 'loading' || loading) {
     return (
@@ -289,30 +267,6 @@ export default function VitalDashboardPage() {
           </Card>
         </div>
 
-        {/* Map View - Nearest Guardians Only */}
-        {featureFlags.MAP_VIEW && vitalLocation && nearestGuardians.length > 0 && (
-          <Card className="mb-8">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MapPin className="h-5 w-5" />
-                Nearest Guardians
-              </CardTitle>
-              <CardDescription>
-                Top 10 guardians closest to your location
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <LeafletMap
-                guardians={nearestGuardians}
-                vitalLocation={vitalLocation}
-                radius={10}
-                onGuardianClick={(guardian) => {
-                  router.push(`/vital/guardians/${guardian._id}`);
-                }}
-              />
-            </CardContent>
-          </Card>
-        )}
 
         {/* Care History Section */}
         {allBookings.length > 0 && (

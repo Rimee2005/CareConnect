@@ -15,10 +15,8 @@ import { useTranslation } from '@/lib/i18n';
 import { Search, Star, MapPin, Shield, Heart, X, ArrowLeft, SlidersHorizontal, Calendar, Clock, Navigation } from 'lucide-react';
 import { AIBadge } from '@/components/AIBadge';
 import { StarRating } from '@/components/StarRating';
-import { LeafletMap } from '@/components/LeafletMap';
 import { featureFlags } from '@/lib/feature-flags';
 import { calculateDistance, formatDistance } from '@/lib/utils';
-import { useVitalLocation } from '@/hooks/useVitalLocation';
 
 interface Guardian {
   _id: string;
@@ -89,10 +87,6 @@ function GuardiansPageContent() {
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const [mapBounds, setMapBounds] = useState<{ north: number; south: number; east: number; west: number } | null>(null);
-  
-  // Use shared location hook
-  const { vitalLocation, mapRadius, setMapRadius, requestCurrentLocation } = useVitalLocation();
   
   // Filter states
   const [selectedSpecializations, setSelectedSpecializations] = useState<string[]>([]);
@@ -311,18 +305,9 @@ function GuardiansPageContent() {
         guardian.experience <= experienceRange[1]
     );
 
-    // Calculate distance for each guardian and filter by distance
+    // Guardians without distance calculation
     const guardiansWithDistance = filtered.map((guardian) => {
-      let distance: number | null = null;
-      if (vitalLocation && guardian.location?.coordinates) {
-        distance = calculateDistance(
-          vitalLocation.lat,
-          vitalLocation.lng,
-          guardian.location.coordinates.lat,
-          guardian.location.coordinates.lng
-        );
-      }
-      return { ...guardian, distance };
+      return { ...guardian, distance: null };
     });
 
     // Filter by distance range - Always show all guardians when browsing
@@ -334,21 +319,6 @@ function GuardiansPageContent() {
     // Distance filtering should only happen if explicitly requested via UI
     // For now, we'll show all guardians to ensure cards are always visible
 
-    // Filter by map bounds if available AND user is actively using map
-    // Only apply map bounds filter if it's explicitly set and user is interacting with map
-    // For now, we'll make this optional - comment out to show all guardians regardless of map bounds
-    // if (mapBounds) {
-    //   distanceFiltered = distanceFiltered.filter((guardian) => {
-    //     if (!guardian.location?.coordinates) return true; // Include guardians without coordinates
-    //     const { lat, lng } = guardian.location.coordinates;
-    //     return (
-    //       lat >= mapBounds.south &&
-    //       lat <= mapBounds.north &&
-    //       lng >= mapBounds.west &&
-    //       lng <= mapBounds.east
-    //     );
-    //   });
-    // }
 
     // Sorting
     const sorted = [...distanceFiltered].sort((a, b) => {
@@ -386,10 +356,7 @@ function GuardiansPageContent() {
     experienceRange,
     distanceRange,
     sortBy,
-    vitalLocation,
     debouncedSearchTerm,
-    mapRadius,
-    mapBounds,
   ]);
 
   if (status === 'loading' || loading) {
@@ -958,20 +925,6 @@ function GuardiansPageContent() {
           Showing {filteredAndSortedGuardians.length} of {activeTab === 'saved' ? savedGuardians.length : guardians.length} {activeTab === 'saved' ? 'saved' : ''} guardians
         </div>
 
-        {/* Map View */}
-        {featureFlags.MAP_VIEW && (
-          <LeafletMap
-            guardians={filteredAndSortedGuardians}
-            vitalLocation={vitalLocation}
-            radius={mapRadius}
-            onRadiusChange={setMapRadius}
-            onMapBoundsChange={setMapBounds}
-            onLocationRequest={requestCurrentLocation}
-            onGuardianClick={(guardian) => {
-              router.push(`/vital/guardians/${guardian._id}`);
-            }}
-          />
-        )}
 
         {/* Guardian Cards - Always visible when browsing */}
         {!loading && (filteredAndSortedGuardians.length > 0 ? (
@@ -1120,13 +1073,6 @@ function GuardiansPageContent() {
                           </div>
                         )}
                         
-                        {/* Distance */}
-                        {guardian.distance !== null && vitalLocation && (
-                          <div className="flex items-center gap-1.5 text-xs text-text-muted dark:text-text-dark-muted">
-                            <MapPin className="h-3 w-3" />
-                            <span>{formatDistance(guardian.distance)} {t('guardians.away')}</span>
-                          </div>
-                        )}
                         
                         {/* Trusted by X families */}
                         {guardian.reviewCount !== undefined && guardian.reviewCount > 0 && (

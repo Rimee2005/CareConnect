@@ -11,7 +11,6 @@ import { Badge } from '@/components/ui/badge';
 import { useTranslation } from '@/lib/i18n';
 import { Plus, Calendar, User, Star, MapPin, Clock, CheckCircle, TrendingUp, Power, PowerOff, Edit } from 'lucide-react';
 import { StarRating } from '@/components/StarRating';
-import { GuardianLocationMap } from '@/components/GuardianLocationMap';
 import { featureFlags } from '@/lib/feature-flags';
 
 interface GuardianProfile {
@@ -497,8 +496,8 @@ export default function GuardianDashboardPage() {
           </Card>
         </div>
 
-        {/* Read-only Map */}
-        {featureFlags.MAP_VIEW && profile?.location?.coordinates && (
+        {/* Location Info */}
+        {profile?.location?.coordinates && (
           <Card className="mb-6 sm:mb-8">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -506,25 +505,13 @@ export default function GuardianDashboardPage() {
                 My Location & Service Area
               </CardTitle>
               <CardDescription>
-                Your service location and radius (read-only)
+                Your service location and radius
               </CardDescription>
             </CardHeader>
-            <CardContent className="p-0">
-              {profile.location?.coordinates && (
-                <GuardianLocationMap
-                  location={{
-                    lat: profile.location.coordinates.lat,
-                    lng: profile.location.coordinates.lng,
-                  }}
-                  serviceRadius={profile.serviceRadius || 10}
-                  city={profile.location.city}
-                />
-              )}
-              <div className="p-4 sm:p-6">
-                <p className="text-sm text-text-muted dark:text-text-dark-muted transition-colors">
-                  Service radius: {profile.serviceRadius || 10} km from {profile.location?.city || 'your location'}
-                </p>
-              </div>
+            <CardContent className="p-4 sm:p-6">
+              <p className="text-sm text-text-muted dark:text-text-dark-muted transition-colors">
+                Service radius: {profile.serviceRadius || 10} km from {profile.location?.city || 'your location'}
+              </p>
             </CardContent>
           </Card>
         )}

@@ -14,9 +14,8 @@ import { featureFlags } from '@/lib/feature-flags';
 import { Star, MapPin, Shield, Calendar, Clock, CheckCircle, Languages, Clock as ClockIcon, TrendingUp, DollarSign, Info, Award, Sparkles } from 'lucide-react';
 import { StarRating } from '@/components/StarRating';
 import { Toast } from '@/components/ui/toast';
-import { formatResponseSpeed, getAvailabilityStatus, formatReliabilityScore } from '@/lib/guardian-metrics';
-import { GuardianMap } from '@/components/GuardianMap';
 import { AIBadge } from '@/components/AIBadge';
+import { formatResponseSpeed, formatReliabilityScore, getAvailabilityStatus } from '@/lib/guardian-metrics';
 
 interface Guardian {
   _id: string;
@@ -94,7 +93,6 @@ export default function GuardianDetailPage() {
   const [bookingNotes, setBookingNotes] = useState('');
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
-  const [vitalLocation, setVitalLocation] = useState<{ lat: number; lng: number } | undefined>(undefined);
 
   useEffect(() => {
     if (session?.user?.role !== 'VITAL') {
@@ -103,25 +101,8 @@ export default function GuardianDetailPage() {
     }
     fetchGuardian();
     fetchReviews();
-    fetchVitalLocation();
   }, [params.id, session, router]);
 
-  const fetchVitalLocation = async () => {
-    try {
-      const res = await fetch('/api/vital/profile');
-      if (res.ok) {
-        const data = await res.json();
-        if (data.location?.coordinates) {
-          setVitalLocation({
-            lat: data.location.coordinates.lat,
-            lng: data.location.coordinates.lng,
-          });
-        }
-      }
-    } catch (error) {
-      console.error('Failed to fetch vital location:', error);
-    }
-  };
 
   const fetchGuardian = async () => {
     try {
@@ -631,34 +612,7 @@ export default function GuardianDetailPage() {
               </CardContent>
             </Card>
 
-            {/* Map with Service Radius */}
-            {featureFlags.MAP_VIEW && guardian.location?.coordinates && (
-              <Card className="mt-6 sm:mt-8">
-                <CardHeader className="px-4 sm:px-6">
-                  <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-                    <MapPin className="h-5 w-5" />
-                    Location & Service Area
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="px-4 sm:px-6">
-                  <div className="h-64 w-full rounded-lg overflow-hidden">
-                    <GuardianMap
-                      guardians={[guardian]}
-                      vitalLocation={vitalLocation}
-                      onGuardianClick={() => {}}
-                    />
-                  </div>
-                  <p className="mt-3 text-xs text-text-muted dark:text-text-dark-muted transition-colors">
-                    Service radius: {guardian.serviceRadius} km from {guardian.location?.city || 'location'}
-                    {vitalLocation && guardian.distance !== null && guardian.distance !== undefined && (
-                      <span className="ml-2">
-                        • Distance: {guardian.distance.toFixed(1)} km away
-                      </span>
-                    )}
-                  </p>
-                </CardContent>
-              </Card>
-            )}
+
 
             {/* Reviews & Ratings - Full Display */}
             <Card className="mt-6 sm:mt-8">

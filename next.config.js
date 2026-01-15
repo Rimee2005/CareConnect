@@ -9,17 +9,8 @@ const nextConfig = {
       },
     ],
   },
-  webpack: (config, { isServer }) => {
-    // Fix for Leaflet in Next.js
-    if (!isServer) {
-      config.resolve.fallback = {
-        ...config.resolve.fallback,
-        fs: false,
-      };
-    }
-    
-    return config;
-  },
+  // Turbopack configuration (Next.js 16+)
+  turbopack: {},
 }
 
 module.exports = nextConfig

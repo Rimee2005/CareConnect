@@ -46,10 +46,10 @@ export function Navbar() {
   return (
     <nav className="sticky top-0 z-50 border-b border-border/60 bg-background/95 backdrop-blur-sm dark:bg-background-dark/95 dark:border-border-dark/60 shadow-sm transition-all duration-200" role="navigation" aria-label="Main navigation">
       <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
-        {/* Logo */}
+        {/* Logo - Aligned to extreme top-left with increased size */}
         <Link 
           href="/" 
-          className="flex items-center text-xl font-bold tracking-tight text-primary transition-all duration-200 hover:text-primary/80 dark:text-primary-dark-mode dark:hover:text-primary-dark-mode/80 sm:text-2xl"
+          className="flex items-center text-2xl font-bold tracking-tight text-primary transition-all duration-200 hover:text-primary/80 dark:text-primary-dark-mode dark:hover:text-primary-dark-mode/80 sm:text-3xl"
           onClick={() => setMobileMenuOpen(false)}
         >
           CareConnect
@@ -186,13 +186,13 @@ export function Navbar() {
       {mobileMenuOpen && (
         <>
           <div
-            className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm md:hidden animate-in fade-in duration-200"
+            className="fixed inset-0 z-40 bg-black/60 md:hidden animate-in fade-in duration-200"
             onClick={() => setMobileMenuOpen(false)}
             aria-hidden="true"
           />
-          <div className="fixed inset-y-0 right-0 z-50 w-full max-w-sm bg-background dark:bg-background-dark shadow-xl md:hidden animate-in slide-in-from-right duration-300">
+          <div className="fixed inset-y-0 right-0 z-50 w-full max-w-sm bg-background dark:bg-background-dark shadow-2xl md:hidden animate-in slide-in-from-right duration-300">
             {/* Mobile Menu Header */}
-            <div className="flex h-16 items-center justify-between border-b border-border/60 dark:border-border-dark/60 px-6">
+            <div className="flex h-16 items-center justify-between border-b border-border dark:border-border-dark bg-background dark:bg-background-dark px-6">
               <span className="text-lg font-semibold tracking-tight text-text dark:text-text-dark">
                 {t('nav.menu') || 'Menu'}
               </span>
@@ -201,14 +201,14 @@ export function Navbar() {
                 size="icon"
                 onClick={() => setMobileMenuOpen(false)}
                 aria-label="Close menu"
-                className="h-9 w-9 rounded-lg transition-all duration-200 hover:bg-background-secondary dark:hover:bg-background-dark-secondary focus-visible:ring-2 focus-visible:ring-primary/20"
+                className="h-9 w-9 rounded-lg transition-all duration-200 hover:bg-background-secondary dark:hover:bg-background-dark-secondary focus-visible:ring-2 focus-visible:ring-primary/20 text-text dark:text-text-dark"
               >
                 <X className="h-5 w-5" />
               </Button>
             </div>
             
             {/* Mobile Menu Content */}
-            <div className="flex h-[calc(100vh-4rem)] flex-col overflow-y-auto px-6 py-6">
+            <div className="flex h-[calc(100vh-4rem)] flex-col overflow-y-auto bg-background dark:bg-background-dark px-6 py-6">
               <nav className="space-y-1" aria-label="Mobile navigation">
                 {!session && (
                   <>
@@ -216,8 +216,8 @@ export function Navbar() {
                       href="/"
                       className={cn(
                         "block rounded-lg px-4 py-3 text-base font-medium transition-all duration-200",
-                        "text-text/70 hover:text-text hover:bg-background-secondary",
-                        "dark:text-text-dark/70 dark:hover:text-text-dark dark:hover:bg-background-dark-secondary",
+                        "text-text hover:text-text hover:bg-background-secondary",
+                        "dark:text-text-dark dark:hover:text-text-dark dark:hover:bg-background-dark-secondary",
                         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-2",
                         isActive('/') && "bg-primary/5 text-primary dark:bg-primary-dark-mode/10 dark:text-primary-dark-mode"
                       )}
@@ -229,8 +229,8 @@ export function Navbar() {
                       href="/about"
                       className={cn(
                         "block rounded-lg px-4 py-3 text-base font-medium transition-all duration-200",
-                        "text-text/70 hover:text-text hover:bg-background-secondary",
-                        "dark:text-text-dark/70 dark:hover:text-text-dark dark:hover:bg-background-dark-secondary",
+                        "text-text hover:text-text hover:bg-background-secondary",
+                        "dark:text-text-dark dark:hover:text-text-dark dark:hover:bg-background-dark-secondary",
                         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-2",
                         isActive('/about') && "bg-primary/5 text-primary dark:bg-primary-dark-mode/10 dark:text-primary-dark-mode"
                       )}
@@ -246,8 +246,8 @@ export function Navbar() {
                       href={`/${session.user.role.toLowerCase()}/dashboard`}
                       className={cn(
                         "block rounded-lg px-4 py-3 text-base font-medium transition-all duration-200",
-                        "text-text/70 hover:text-text hover:bg-background-secondary",
-                        "dark:text-text-dark/70 dark:hover:text-text-dark dark:hover:bg-background-dark-secondary",
+                        "text-text hover:text-text hover:bg-background-secondary",
+                        "dark:text-text-dark dark:hover:text-text-dark dark:hover:bg-background-dark-secondary",
                         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-2",
                         isActive(`/${session.user.role.toLowerCase()}/dashboard`) && "bg-primary/5 text-primary dark:bg-primary-dark-mode/10 dark:text-primary-dark-mode"
                       )}
@@ -257,7 +257,7 @@ export function Navbar() {
                     </Link>
                     <button
                       onClick={handleLogout}
-                      className="w-full rounded-lg px-4 py-3 text-left text-base font-medium text-text/70 transition-all duration-200 hover:bg-background-secondary hover:text-text dark:text-text-dark/70 dark:hover:bg-background-dark-secondary dark:hover:text-text-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-2"
+                      className="w-full rounded-lg px-4 py-3 text-left text-base font-medium text-text transition-all duration-200 hover:bg-background-secondary hover:text-text dark:text-text-dark dark:hover:bg-background-dark-secondary dark:hover:text-text-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-2"
                     >
                       {t('nav.logout')}
                     </button>
@@ -266,7 +266,7 @@ export function Navbar() {
                   <div className="space-y-3 pt-4">
                     <Link
                       href="/auth/login"
-                      className="block w-full rounded-lg px-4 py-3 text-center text-base font-medium text-text/80 transition-all duration-200 hover:bg-background-secondary hover:text-text dark:text-text-dark/80 dark:hover:bg-background-dark-secondary dark:hover:text-text-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-2"
+                      className="block w-full rounded-lg px-4 py-3 text-center text-base font-medium text-text transition-all duration-200 hover:bg-background-secondary hover:text-text dark:text-text-dark dark:hover:bg-background-dark-secondary dark:hover:text-text-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-2"
                       onClick={() => setMobileMenuOpen(false)}
                     >
                       {t('nav.login')}

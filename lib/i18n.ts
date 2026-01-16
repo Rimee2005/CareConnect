@@ -401,6 +401,7 @@ const resources = {
       'dashboard.guardian.end': 'End',
       'dashboard.guardian.markComplete': 'Mark Complete',
       'dashboard.guardian.reschedule': 'Reschedule',
+      'dashboard.guardian.chat': 'Chat',
       'dashboard.guardian.reviewsTitle': 'Reviews',
       
       // Guardian Browsing
@@ -1557,6 +1558,7 @@ const resources = {
       'dashboard.guardian.end': 'समाप्ति',
       'dashboard.guardian.markComplete': 'पूर्ण चिह्नित करें',
       'dashboard.guardian.reschedule': 'पुनर्निर्धारित करें',
+      'dashboard.guardian.chat': 'चैट',
       'dashboard.guardian.reviewsTitle': 'समीक्षाएं',
       
       // Help Center (Hindi)

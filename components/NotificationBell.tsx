@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Bell } from 'lucide-react';
 import { Button } from './ui/button';
@@ -22,14 +22,57 @@ export function NotificationBell() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (session?.user?.id) {
+      // Fetch notifications once on mount (no polling, no socket.io)
       fetchNotifications();
-      const interval = setInterval(fetchNotifications, 30000); // Poll every 30s
-      return () => clearInterval(interval);
+      
+      // Request browser notification permission
+      if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission().then((permission) => {
+          console.log('Notification permission:', permission);
+        });
+      }
+      
+      // All real-time functionality disabled - no socket.io, no polling
+      // Socket.io and polling removed to prevent timeout errors
     }
   }, [session]);
+
+  // Handle click outside to close dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        isOpen &&
+        dropdownRef.current &&
+        buttonRef.current &&
+        !dropdownRef.current.contains(event.target as Node) &&
+        !buttonRef.current.contains(event.target as Node)
+      ) {
+        setIsOpen(false);
+      }
+    };
+
+    // Handle escape key to close dropdown
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && isOpen) {
+        setIsOpen(false);
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleEscape);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [isOpen]);
 
   const fetchNotifications = async () => {
     try {
@@ -110,10 +153,12 @@ export function NotificationBell() {
   return (
     <div className="relative">
       <Button
+        ref={buttonRef}
         variant="ghost"
         size="icon"
         onClick={() => setIsOpen(!isOpen)}
         aria-label="Notifications"
+        aria-expanded={isOpen}
         className="relative"
       >
         <Bell className="h-5 w-5" />
@@ -128,38 +173,37 @@ export function NotificationBell() {
       </Button>
 
       {isOpen && (
-        <>
-          <div
-            className="fixed inset-0 z-40"
-            onClick={() => setIsOpen(false)}
-            aria-hidden="true"
-          />
-          <div className="absolute right-0 top-12 z-50 w-[calc(100vw-2rem)] max-w-80 rounded-lg border border-border bg-background dark:bg-background-dark dark:border-border-dark shadow-medium dark:shadow-dark-medium transition-colors sm:w-80">
-            <div className="border-b border-border dark:border-border-dark p-3 sm:p-4">
-              <h3 className="text-sm font-semibold text-text dark:text-text-dark sm:text-base transition-colors">Notifications</h3>
-            </div>
-            <div className="max-h-[calc(100vh-12rem)] overflow-y-auto sm:max-h-96">
-              {notifications.length === 0 ? (
-                <p className="p-4 text-center text-text-muted">No notifications</p>
-              ) : (
-                notifications.map((notification) => (
-                  <div
-                    key={notification._id}
-                    className={`border-b border-border dark:border-border-dark p-3 hover:bg-background-secondary dark:hover:bg-background-dark-secondary cursor-pointer transition-colors sm:p-4 ${
-                      !notification.read ? 'bg-primary/5 dark:bg-primary-dark-mode/10' : ''
-                    }`}
-                    onClick={() => handleNotificationClick(notification)}
-                  >
-                    <p className="text-xs font-medium text-text dark:text-text-dark sm:text-sm transition-colors">{notification.message}</p>
-                    <p className="mt-1 text-xs text-text-muted dark:text-text-dark-light">
-                      {new Date(notification.createdAt).toLocaleString()}
-                    </p>
-                  </div>
-                ))
-              )}
-            </div>
+        <div 
+          ref={dropdownRef}
+          className="absolute right-0 top-12 z-50 w-[calc(100vw-2rem)] max-w-80 rounded-lg border border-border bg-background dark:bg-background-dark dark:border-border-dark shadow-medium dark:shadow-dark-medium transition-colors sm:w-80"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Notifications dropdown"
+        >
+          <div className="border-b border-border dark:border-border-dark p-3 sm:p-4">
+            <h3 className="text-sm font-semibold text-text dark:text-text-dark sm:text-base transition-colors">Notifications</h3>
           </div>
-        </>
+          <div className="max-h-[calc(100vh-12rem)] overflow-y-auto sm:max-h-96">
+            {notifications.length === 0 ? (
+              <p className="p-4 text-center text-text-muted dark:text-text-dark-muted">No notifications</p>
+            ) : (
+              notifications.map((notification) => (
+                <div
+                  key={notification._id}
+                  className={`border-b border-border dark:border-border-dark p-3 hover:bg-background-secondary dark:hover:bg-background-dark-secondary cursor-pointer transition-colors sm:p-4 ${
+                    !notification.read ? 'bg-primary/5 dark:bg-primary-dark-mode/10' : ''
+                  }`}
+                  onClick={() => handleNotificationClick(notification)}
+                >
+                  <p className="text-xs font-medium text-text dark:text-text-dark sm:text-sm transition-colors">{notification.message}</p>
+                  <p className="mt-1 text-xs text-text-muted dark:text-text-dark-light">
+                    {new Date(notification.createdAt).toLocaleString()}
+                  </p>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
       )}
     </div>
   );

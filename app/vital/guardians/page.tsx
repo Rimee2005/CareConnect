@@ -546,7 +546,7 @@ function GuardiansPageContent() {
                   {/* Specialization Filter */}
                   <div className="space-y-3">
                     <Label className="text-sm font-semibold text-text dark:text-text-dark">{t('guardians.specialization')}</Label>
-                    <div className="max-h-40 space-y-2 overflow-y-auto rounded-md border border-border dark:border-border-dark p-3 bg-background-secondary dark:bg-background-dark-secondary">
+                    <div className="max-h-40 space-y-2 overflow-y-auto rounded-md border border-border dark:border-border-dark/50 p-3 bg-background-secondary dark:bg-background-dark/40 dark:shadow-inner">
                       {allSpecializations.map((spec) => (
                         <label key={spec} className="flex items-center gap-2 cursor-pointer hover:bg-background dark:hover:bg-background-dark p-1 rounded">
                           <input
@@ -570,7 +570,7 @@ function GuardiansPageContent() {
                   {/* Availability Days Filter */}
                   <div className="space-y-3">
                     <Label className="text-sm font-semibold text-text dark:text-text-dark">{t('guardians.availableDays')}</Label>
-                    <div className="space-y-2 rounded-md border border-border dark:border-border-dark p-3 bg-background-secondary dark:bg-background-dark-secondary">
+                    <div className="space-y-2 rounded-md border border-border dark:border-border-dark/60 p-3 bg-background-secondary dark:bg-background-dark/50 dark:shadow-inner">
                       {[
                         { en: 'Monday', key: 'monday' },
                         { en: 'Tuesday', key: 'tuesday' },
@@ -620,7 +620,7 @@ function GuardiansPageContent() {
                     <Label className="text-sm font-semibold text-text dark:text-text-dark">
                       {t('guardians.experience')}: {experienceRange[0]} - {experienceRange[1]} {t('guardians.years')}
                     </Label>
-                    <div className="space-y-3 rounded-md border border-border dark:border-border-dark p-4 bg-background-secondary dark:bg-background-dark-secondary">
+                    <div className="space-y-3 rounded-md border border-border dark:border-border-dark/60 p-4 bg-background-secondary dark:bg-background-dark/50 dark:shadow-inner">
                       <div className="flex items-center gap-2">
                         <Input
                           type="number"
@@ -664,7 +664,7 @@ function GuardiansPageContent() {
                     <Label className="text-sm font-semibold text-text dark:text-text-dark">
                       {t('guardians.serviceRadius')}: {distanceRange[0]} - {distanceRange[1]} {t('guardians.km')}
                     </Label>
-                    <div className="space-y-3 rounded-md border border-border dark:border-border-dark p-4 bg-background-secondary dark:bg-background-dark-secondary">
+                    <div className="space-y-3 rounded-md border border-border dark:border-border-dark/60 p-4 bg-background-secondary dark:bg-background-dark/50 dark:shadow-inner">
                       <div className="flex items-center gap-2">
                         <Input
                           type="number"
@@ -736,9 +736,9 @@ function GuardiansPageContent() {
 
         {/* Filters Panel - Desktop Side Panel */}
         {showFilters && !isMobile && (
-          <Card className="mb-6 animate-in slide-in-from-top-2 duration-300 border-primary/20">
+          <Card className="mb-6 animate-in slide-in-from-top-2 duration-300 border-primary/20 dark:bg-background-dark-secondary dark:border-border-dark/50 dark:shadow-[0_4px_12px_rgba(0,0,0,0.25)]">
             <CardContent className="p-4 sm:p-6">
-              <div className="mb-6 flex items-center justify-between border-b border-border dark:border-border-dark pb-4">
+              <div className="mb-6 flex items-center justify-between border-b border-border dark:border-border-dark/60 pb-4">
                 <h3 className="text-lg font-semibold text-text dark:text-text-dark transition-colors">
                   {t('guardians.filterGuardians')}
                 </h3>
@@ -951,7 +951,7 @@ function GuardiansPageContent() {
               const hasPastBooking = isPastGuardian(guardian._id);
               
               return (
-                <Card key={guardian._id} className="group relative overflow-hidden border-2 border-border/50 dark:border-border-dark/50 hover:border-primary/30 dark:hover:border-primary-dark-mode/30 hover:shadow-lg dark:hover:shadow-dark-lg transition-all duration-300 bg-background dark:bg-background-dark">
+                <Card key={guardian._id} className="group relative overflow-hidden border-2 border-border/50 dark:border-border-dark/50 hover:border-primary/30 dark:hover:border-primary-dark-mode/40 hover:shadow-lg dark:hover:shadow-[0_6px_24px_rgba(0,0,0,0.4)] transition-all duration-300 bg-background dark:bg-background-dark-secondary dark:shadow-[0_4px_12px_rgba(0,0,0,0.25)]">
                   <CardContent className="p-0">
                     <div className="relative">
                       {/* This Week Availability Strip */}
@@ -970,14 +970,14 @@ function GuardiansPageContent() {
                             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                           />
                         ) : (
-                          <div className="flex h-full items-center justify-center">
+                          <div className="flex h-full items-center justify-center dark:bg-background-dark-secondary/60">
                             <span className="text-5xl font-bold text-primary dark:text-primary-dark-mode transition-colors">
                               {guardian.name.charAt(0).toUpperCase()}
                             </span>
                           </div>
                         )}
                         {/* Gradient Overlay */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent dark:from-background-dark/80" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent dark:from-background-dark/60" />
                         
                         {/* Top Right Badges */}
                         <div className="absolute right-3 top-3 flex flex-col gap-2 items-end z-10">
@@ -991,7 +991,7 @@ function GuardiansPageContent() {
                           {guardian.isVerified && (
                             <Badge
                               variant="success"
-                              className="flex items-center gap-1.5 px-2.5 py-1 shadow-md backdrop-blur-sm bg-success/90 text-white border-0"
+                              className="flex items-center gap-1.5 px-2.5 py-1 shadow-md backdrop-blur-sm bg-success/90 dark:bg-emerald-500 dark:text-emerald-950 border-0 dark:shadow-[0_2px_8px_rgba(16,185,129,0.3)] font-medium"
                             >
                               <Shield className="h-3.5 w-3.5" />
                               <span className="text-xs font-semibold">{t('guardians.verified')}</span>
@@ -1003,7 +1003,7 @@ function GuardiansPageContent() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="absolute left-3 top-3 z-10 h-9 w-9 rounded-full bg-background/95 dark:bg-background-dark/95 hover:bg-background dark:hover:bg-background-dark shadow-lg backdrop-blur-sm border border-border/50 dark:border-border-dark/50 transition-all hover:scale-110"
+                          className="absolute left-3 top-3 z-10 h-9 w-9 rounded-full bg-background/95 dark:bg-background-dark-secondary/95 hover:bg-background dark:hover:bg-background-dark-secondary shadow-lg dark:shadow-[0_4px_12px_rgba(0,0,0,0.3)] backdrop-blur-sm border border-border/50 dark:border-border-dark/50 transition-all hover:scale-110"
                           onClick={() => toggleSaveGuardian(guardian._id)}
                           aria-label={isSaved ? t('guardians.unsave') : t('guardians.save')}
                         >
@@ -1041,7 +1041,7 @@ function GuardiansPageContent() {
                               </span>
                             </div>
                           ) : (
-                            <Badge variant="outline" className="mt-1 text-xs">
+                            <Badge variant="outline" className="mt-1 text-xs dark:border-border-dark/50 dark:text-text-dark-muted">
                               {t('guardians.new')}
                             </Badge>
                           )}
@@ -1101,13 +1101,13 @@ function GuardiansPageContent() {
                       {/* Primary CTA: Book Service */}
                       <div className="flex flex-col gap-2">
                         <Link href={`/vital/guardians/${guardian._id}`} className="block">
-                          <Button className="w-full font-semibold shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-200 group-hover:bg-primary group-hover:text-white" size="sm">
+                          <Button className="w-full font-semibold shadow-sm dark:shadow-[0_4px_12px_rgba(0,0,0,0.3)] hover:shadow-md dark:hover:shadow-[0_6px_20px_rgba(0,0,0,0.4)] hover:scale-[1.02] transition-all duration-200 group-hover:bg-primary group-hover:text-white dark:bg-primary-dark-mode dark:hover:bg-primary-dark-mode-hover" size="sm">
                             {t('vital.book')}
                           </Button>
                         </Link>
                         {hasPastBooking && (
                           <Link href={`/vital/guardians/${guardian._id}`}>
-                            <Button variant="outline" size="sm" className="w-full whitespace-nowrap text-xs sm:text-sm">
+                            <Button variant="outline" size="sm" className="w-full whitespace-nowrap text-xs sm:text-sm dark:border-border-dark/50 dark:hover:bg-background-dark-secondary dark:hover:border-primary-dark-mode/40">
                               {t('guardians.bookAgain')}
                             </Button>
                           </Link>
@@ -1121,7 +1121,7 @@ function GuardiansPageContent() {
           </div>
         ) : (
           /* Empty State */
-          <Card className="border-2 border-dashed border-primary/30 bg-primary/5 dark:bg-primary-dark-mode/10">
+          <Card className="border-2 border-dashed border-primary/30 dark:border-primary-dark-mode/40 bg-primary/5 dark:bg-primary-dark-mode/10 dark:bg-background-dark-secondary dark:shadow-[0_4px_12px_rgba(0,0,0,0.25)]">
             <CardContent className="flex flex-col items-center justify-center py-12 sm:py-16 px-6 text-center">
               {activeTab === 'saved' ? (
                 <>

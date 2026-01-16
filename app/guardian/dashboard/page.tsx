@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useTranslation } from '@/lib/i18n';
 import i18n from '@/lib/i18n';
-import { Plus, Calendar, User, Star, MapPin, Clock, CheckCircle, TrendingUp, Power, PowerOff, Edit } from 'lucide-react';
+import { Plus, Calendar, User, Star, MapPin, Clock, CheckCircle, TrendingUp, Power, PowerOff, Edit, MessageSquare } from 'lucide-react';
 import { StarRating } from '@/components/StarRating';
 import { featureFlags } from '@/lib/feature-flags';
 
@@ -57,6 +57,7 @@ interface Booking {
   _id: string;
   status: string;
   vitalId: {
+    _id: string;
     name: string;
     profilePhoto?: string;
     location?: {
@@ -335,18 +336,18 @@ export default function GuardianDashboardPage() {
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-background dark:bg-gradient-to-br dark:from-background-dark dark:via-background-dark-secondary/80 dark:to-background-dark transition-colors">
       <Navbar />
-      <div className="container mx-auto px-4 py-6 sm:px-6 sm:py-8">
-        <div className="mb-6 sm:mb-8">
-          <h1 className="text-2xl font-bold text-text sm:text-3xl dark:text-text-dark transition-colors">{t('dashboard.guardian.welcome')}, {profile.name}!</h1>
-          <p className="text-sm text-text-muted sm:text-base dark:text-text-dark-light transition-colors">{t('dashboard.guardian.subtitle')}</p>
+      <div className="container mx-auto px-3 py-4 sm:px-4 sm:py-6 md:px-6 md:py-8">
+        <div className="mb-4 sm:mb-6 md:mb-8">
+          <h1 className="text-xl font-bold text-text sm:text-2xl md:text-3xl dark:text-text-dark transition-colors">{t('dashboard.guardian.welcome')}, {profile.name}!</h1>
+          <p className="text-xs text-text-muted sm:text-sm md:text-base dark:text-text-dark-muted transition-colors mt-1">{t('dashboard.guardian.subtitle')}</p>
         </div>
 
         {/* Overview Widgets */}
-        <div className="mb-6 grid gap-4 sm:gap-6 sm:mb-8 md:grid-cols-2 lg:grid-cols-4">
+        <div className="mb-4 grid gap-3 sm:gap-4 sm:mb-6 md:mb-8 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
           {/* Profile Completion */}
-          <Card>
+          <Card className="dark:bg-gradient-to-br dark:from-background-dark-secondary dark:to-background-dark-secondary/95 dark:border-border-dark/40 dark:shadow-[0_4px_16px_rgba(0,0,0,0.25)] dark:hover:shadow-[0_6px_24px_rgba(0,0,0,0.3)] dark:hover:border-primary-dark-mode/30 dark:hover:-translate-y-0.5 transition-all duration-300">
             <CardHeader className="pb-3">
               <CardTitle className="text-base">{t('dashboard.guardian.profileCompletion')}</CardTitle>
             </CardHeader>
@@ -367,7 +368,7 @@ export default function GuardianDashboardPage() {
               <Button 
                 variant="outline" 
                 size="sm"
-                className="mt-3 w-full"
+                className="mt-3 w-full dark:border-border-dark/50 dark:hover:bg-background-dark-secondary/80 dark:hover:border-primary-dark-mode/40 dark:hover:shadow-[0_0_6px_rgba(45,212,191,0.12)] dark:focus:ring-2 dark:focus:ring-primary-dark-mode/40 transition-all"
                 onClick={() => router.push('/guardian/profile/create')}
               >
                 <Edit className="mr-2 h-4 w-4" />
@@ -377,9 +378,9 @@ export default function GuardianDashboardPage() {
           </Card>
 
           {/* Availability Toggle */}
-          <Card>
+          <Card className="dark:bg-gradient-to-br dark:from-background-dark-secondary dark:to-background-dark-secondary/95 dark:border-border-dark/40 dark:shadow-[0_4px_16px_rgba(0,0,0,0.25)] dark:hover:shadow-[0_6px_24px_rgba(0,0,0,0.3)] dark:hover:border-primary-dark-mode/30 dark:hover:-translate-y-0.5 transition-all duration-300">
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">{t('dashboard.guardian.availability')}</CardTitle>
+              <CardTitle className="text-base dark:text-text-dark">{t('dashboard.guardian.availability')}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex items-center justify-between">
@@ -419,10 +420,10 @@ export default function GuardianDashboardPage() {
           </Card>
 
           {/* Today's Bookings */}
-          <Card>
+          <Card className="dark:bg-gradient-to-br dark:from-background-dark-secondary dark:to-background-dark-secondary/95 dark:border-border-dark/40 dark:shadow-[0_4px_16px_rgba(0,0,0,0.25)] dark:hover:shadow-[0_6px_24px_rgba(0,0,0,0.3)] dark:hover:border-primary-dark-mode/30 dark:hover:-translate-y-0.5 transition-all duration-300">
             <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Clock className="h-4 w-4" />
+              <CardTitle className="flex items-center gap-2 text-base dark:text-text-dark">
+                <Clock className="h-4 w-4 dark:text-primary-dark-mode" />
                 {t('dashboard.guardian.today')}
               </CardTitle>
             </CardHeader>
@@ -433,10 +434,10 @@ export default function GuardianDashboardPage() {
           </Card>
 
           {/* Upcoming Bookings */}
-          <Card>
+          <Card className="dark:bg-gradient-to-br dark:from-background-dark-secondary dark:to-background-dark-secondary/95 dark:border-border-dark/40 dark:shadow-[0_4px_16px_rgba(0,0,0,0.25)] dark:hover:shadow-[0_6px_24px_rgba(0,0,0,0.3)] dark:hover:border-primary-dark-mode/30 dark:hover:-translate-y-0.5 transition-all duration-300">
             <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Calendar className="h-4 w-4" />
+              <CardTitle className="flex items-center gap-2 text-base dark:text-text-dark">
+                <Calendar className="h-4 w-4 dark:text-primary-dark-mode" />
                 {t('dashboard.guardian.upcoming')}
               </CardTitle>
             </CardHeader>
@@ -448,11 +449,11 @@ export default function GuardianDashboardPage() {
         </div>
 
         {/* Quick Stats */}
-        <div className="mb-6 grid gap-4 sm:gap-6 sm:mb-8 md:grid-cols-3">
-          <Card>
+        <div className="mb-4 grid gap-3 sm:gap-4 sm:mb-6 md:mb-8 md:gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
+          <Card className="dark:bg-gradient-to-br dark:from-background-dark-secondary dark:to-background-dark-secondary/95 dark:border-border-dark/40 dark:shadow-[0_4px_16px_rgba(0,0,0,0.25)] dark:hover:shadow-[0_6px_24px_rgba(0,0,0,0.3)] dark:hover:border-primary-dark-mode/30 dark:hover:-translate-y-0.5 transition-all duration-300">
             <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <TrendingUp className="h-4 w-4" />
+              <CardTitle className="flex items-center gap-2 text-base dark:text-text-dark">
+                <TrendingUp className="h-4 w-4 dark:text-primary-dark-mode" />
                 {t('dashboard.guardian.totalBookings')}
               </CardTitle>
             </CardHeader>
@@ -462,10 +463,10 @@ export default function GuardianDashboardPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="dark:bg-gradient-to-br dark:from-background-dark-secondary dark:to-background-dark-secondary/95 dark:border-border-dark/40 dark:shadow-[0_4px_16px_rgba(0,0,0,0.25)] dark:hover:shadow-[0_6px_24px_rgba(0,0,0,0.3)] dark:hover:border-primary-dark-mode/30 dark:hover:-translate-y-0.5 transition-all duration-300">
             <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Star className="h-4 w-4" />
+              <CardTitle className="flex items-center gap-2 text-base dark:text-text-dark">
+                <Star className="h-4 w-4 dark:text-primary-dark-mode" />
                 {t('dashboard.guardian.averageRating')}
               </CardTitle>
             </CardHeader>
@@ -484,10 +485,10 @@ export default function GuardianDashboardPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="dark:bg-gradient-to-br dark:from-background-dark-secondary dark:to-background-dark-secondary/95 dark:border-border-dark/40 dark:shadow-[0_4px_16px_rgba(0,0,0,0.25)] dark:hover:shadow-[0_6px_24px_rgba(0,0,0,0.3)] dark:hover:border-primary-dark-mode/30 dark:hover:-translate-y-0.5 transition-all duration-300">
             <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <User className="h-4 w-4" />
+              <CardTitle className="flex items-center gap-2 text-base dark:text-text-dark">
+                <User className="h-4 w-4 dark:text-primary-dark-mode" />
                 {t('dashboard.guardian.activeVitals')}
               </CardTitle>
             </CardHeader>
@@ -500,13 +501,13 @@ export default function GuardianDashboardPage() {
 
         {/* Location Info */}
         {profile?.location?.coordinates && (
-          <Card className="mb-6 sm:mb-8">
+          <Card className="mb-4 sm:mb-6 md:mb-8 dark:bg-gradient-to-br dark:from-background-dark-secondary dark:to-background-dark-secondary/95 dark:border-border-dark/40 dark:shadow-[0_4px_16px_rgba(0,0,0,0.25)] dark:hover:shadow-[0_6px_24px_rgba(0,0,0,0.3)] dark:hover:border-primary-dark-mode/30 transition-all duration-300">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MapPin className="h-5 w-5" />
+              <CardTitle className="flex items-center gap-2 dark:text-text-dark">
+                <MapPin className="h-5 w-5 dark:text-primary-dark-mode" />
                 {t('dashboard.guardian.myLocation')}
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="dark:text-text-dark-muted">
                 {t('dashboard.guardian.serviceLocationDesc')}
               </CardDescription>
             </CardHeader>
@@ -519,10 +520,10 @@ export default function GuardianDashboardPage() {
         )}
 
         {/* Booking Management */}
-        <Card>
+        <Card className="dark:bg-gradient-to-br dark:from-background-dark-secondary dark:to-background-dark-secondary/95 dark:border-border-dark/40 dark:shadow-[0_4px_16px_rgba(0,0,0,0.25)] dark:hover:shadow-[0_6px_24px_rgba(0,0,0,0.3)] dark:hover:border-primary-dark-mode/30 transition-all duration-300">
           <CardHeader>
-            <CardTitle>{t('dashboard.guardian.bookingManagement')}</CardTitle>
-            <CardDescription>{t('dashboard.guardian.bookingManagementDesc')}</CardDescription>
+            <CardTitle className="dark:text-text-dark">{t('dashboard.guardian.bookingManagement')}</CardTitle>
+            <CardDescription className="dark:text-text-dark-muted">{t('dashboard.guardian.bookingManagementDesc')}</CardDescription>
           </CardHeader>
           <CardContent>
             {bookings.length === 0 ? (
@@ -539,41 +540,43 @@ export default function GuardianDashboardPage() {
                   return (
                     <div
                       key={booking._id}
-                      className="rounded-lg border border-border dark:border-border-dark p-4 transition-colors"
+                      className="rounded-lg border border-border dark:border-border-dark/40 dark:bg-gradient-to-br dark:from-background-dark-secondary dark:to-background-dark-secondary/90 dark:shadow-[0_2px_12px_rgba(0,0,0,0.2)] p-3 sm:p-4 transition-all hover:shadow-md dark:hover:shadow-[0_4px_16px_rgba(0,0,0,0.25)] dark:hover:border-primary-dark-mode/30 dark:hover:-translate-y-0.5"
                     >
-                      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                      <div className="flex flex-col gap-3 sm:gap-4 sm:flex-row sm:items-start sm:justify-between">
                         {/* Vital Info & Booking Details */}
-                        <div className="flex-1 space-y-3">
-                          <div className="flex items-center gap-3">
+                        <div className="flex-1 space-y-2 sm:space-y-3">
+                          <div className="flex items-start gap-2 sm:gap-3">
                             {booking.vitalId.profilePhoto ? (
                               <img
                                 src={booking.vitalId.profilePhoto}
                                 alt={booking.vitalId.name}
-                                className="h-12 w-12 flex-shrink-0 rounded-full object-cover"
+                                className="h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0 rounded-full object-cover"
                               />
                             ) : (
-                              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 dark:bg-primary-dark-mode/20 transition-colors">
-                                <User className="h-6 w-6 text-primary dark:text-primary-dark-mode transition-colors" />
+                              <div className="flex h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 dark:bg-primary-dark-mode/20 transition-colors">
+                                <User className="h-5 w-5 sm:h-6 sm:w-6 text-primary dark:text-primary-dark-mode transition-colors" />
                               </div>
                             )}
                             <div className="min-w-0 flex-1">
-                              <p className="text-base font-semibold text-text dark:text-text-dark transition-colors">
-                                {booking.vitalId.name}
-                              </p>
+                              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2">
+                                <p className="text-sm sm:text-base font-semibold text-text dark:text-text-dark transition-colors">
+                                  {booking.vitalId.name}
+                                </p>
+                                <Badge variant={statusColors[booking.status as keyof typeof statusColors]} className="text-xs w-fit">
+                                  {statusLabels[booking.status as keyof typeof statusLabels]}
+                                </Badge>
+                              </div>
                               {booking.vitalId.location?.city && (
-                                <p className="text-xs text-text-muted dark:text-text-dark-muted transition-colors flex items-center gap-1">
+                                <p className="text-xs text-text-muted dark:text-text-dark-muted transition-colors flex items-center gap-1 mt-1">
                                   <MapPin className="h-3 w-3" />
                                   {booking.vitalId.location.city}
                                 </p>
                               )}
                             </div>
-                            <Badge variant={statusColors[booking.status as keyof typeof statusColors]}>
-                              {statusLabels[booking.status as keyof typeof statusLabels]}
-                            </Badge>
                           </div>
 
                           {/* Booking Details */}
-                          <div className="grid gap-2 sm:grid-cols-2">
+                          <div className="grid gap-2 grid-cols-1 sm:grid-cols-2">
                             {booking.careType && (
                               <div className="flex items-center gap-2 text-sm">
                                 <span className="text-text-muted dark:text-text-dark-muted transition-colors">{t('dashboard.guardian.careType')}:</span>
@@ -615,7 +618,7 @@ export default function GuardianDashboardPage() {
                           </div>
 
                           {booking.notes && (
-                            <div className="rounded-md bg-background/50 dark:bg-background-dark/50 p-3">
+                            <div className="rounded-md bg-background/50 dark:bg-background-dark/30 dark:border dark:border-border-dark/40 p-3">
                               <p className="text-xs font-medium text-text-muted dark:text-text-dark-muted transition-colors mb-1">{t('booking.notes')}:</p>
                               <p className="text-sm text-text dark:text-text-dark transition-colors">{booking.notes}</p>
                             </div>
@@ -623,22 +626,22 @@ export default function GuardianDashboardPage() {
                         </div>
 
                         {/* Actions */}
-                        <div className="flex flex-col gap-2 sm:min-w-[200px]">
+                        <div className="flex flex-col gap-2 sm:min-w-[180px] md:min-w-[200px] mt-2 sm:mt-0">
                           {booking.status === 'PENDING' && (
-                            <div className="flex flex-col gap-2">
+                            <div className="flex flex-col sm:flex-col gap-2">
                               <Button
                                 size="sm"
                                 onClick={() => handleBookingAction(booking._id, 'accept')}
-                                className="w-full text-xs sm:text-sm"
+                                className="w-full text-xs sm:text-sm dark:shadow-[0_0_6px_rgba(45,212,191,0.18)] dark:hover:shadow-[0_0_10px_rgba(45,212,191,0.22)] dark:focus:ring-2 dark:focus:ring-primary-dark-mode/40 transition-all"
                               >
-                                <CheckCircle className="mr-2 h-4 w-4" />
+                                <CheckCircle className="mr-2 h-3 w-3 sm:h-4 sm:w-4" />
                                 {t('guardian.accept')}
                               </Button>
                               <Button
                                 size="sm"
                                 variant="destructive"
                                 onClick={() => handleBookingAction(booking._id, 'reject')}
-                                className="w-full text-xs sm:text-sm"
+                                className="w-full text-xs sm:text-sm dark:shadow-[0_0_6px_rgba(248,113,113,0.15)] dark:hover:shadow-[0_0_10px_rgba(248,113,113,0.2)] dark:focus:ring-2 dark:focus:ring-red-400/40 transition-all"
                               >
                                 {t('guardian.reject')}
                               </Button>
@@ -649,7 +652,7 @@ export default function GuardianDashboardPage() {
                               <Button
                                 size="sm"
                                 onClick={() => handleBookingAction(booking._id, 'start')}
-                                className="w-full text-xs sm:text-sm"
+                                className="w-full text-xs sm:text-sm dark:shadow-[0_0_6px_rgba(45,212,191,0.18)] dark:hover:shadow-[0_0_10px_rgba(45,212,191,0.22)] dark:focus:ring-2 dark:focus:ring-primary-dark-mode/40 transition-all"
                               >
                                 {t('dashboard.guardian.startService')}
                               </Button>
@@ -657,7 +660,7 @@ export default function GuardianDashboardPage() {
                                 size="sm"
                                 variant="outline"
                                 onClick={() => handleReschedule(booking._id)}
-                                className="w-full text-xs sm:text-sm"
+                                className="w-full text-xs sm:text-sm dark:border-border-dark/50 dark:hover:bg-background-dark-secondary dark:hover:border-primary-dark-mode/40"
                               >
                                 {t('dashboard.guardian.reschedule')}
                               </Button>
@@ -667,21 +670,27 @@ export default function GuardianDashboardPage() {
                             <Button
                               size="sm"
                               onClick={() => handleBookingAction(booking._id, 'complete')}
-                              className="w-full text-xs sm:text-sm"
+                              className="w-full text-xs sm:text-sm dark:shadow-[0_0_6px_rgba(45,212,191,0.18)] dark:hover:shadow-[0_0_10px_rgba(45,212,191,0.22)] dark:focus:ring-2 dark:focus:ring-primary-dark-mode/40 transition-all"
                             >
-                              <CheckCircle className="mr-2 h-4 w-4" />
+                              <CheckCircle className="mr-2 h-3 w-3 sm:h-4 sm:w-4" />
                               {t('dashboard.guardian.markComplete')}
                             </Button>
                           )}
                           {(booking.status === 'ACCEPTED' || booking.status === 'ONGOING') && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleReschedule(booking._id)}
-                              className="w-full text-xs sm:text-sm"
-                            >
-                              Reschedule
-                            </Button>
+                            <>
+                              {(booking.vitalId as any)?._id && (
+                                <Link href={`/guardian/chat/${(booking.vitalId as any)._id}`}>
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    className="w-full text-xs sm:text-sm dark:border-primary-dark-mode/60 dark:text-primary-dark-mode dark:hover:bg-primary-dark-mode/15 dark:hover:border-primary-dark-mode dark:hover:shadow-[0_0_8px_rgba(45,212,191,0.25)] dark:focus:ring-2 dark:focus:ring-primary-dark-mode/50 dark:active:bg-primary-dark-mode/20 transition-all"
+                                  >
+                                    <MessageSquare className="mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+                                    {t('dashboard.guardian.chat')}
+                                  </Button>
+                                </Link>
+                              )}
+                            </>
                           )}
                         </div>
                       </div>
@@ -695,23 +704,23 @@ export default function GuardianDashboardPage() {
 
         {/* Reviews Section - Read-only for Guardian */}
         {reviews.length > 0 && (
-          <Card className="mt-6 sm:mt-8">
+          <Card className="mt-4 sm:mt-6 md:mt-8 dark:bg-gradient-to-br dark:from-background-dark-secondary dark:to-background-dark-secondary/95 dark:border-border-dark/40 dark:shadow-[0_4px_16px_rgba(0,0,0,0.25)] dark:hover:shadow-[0_6px_24px_rgba(0,0,0,0.3)] dark:hover:border-primary-dark-mode/30 transition-all duration-300">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Star className="h-5 w-5" />
+              <CardTitle className="flex items-center gap-2 dark:text-text-dark">
+                <Star className="h-5 w-5 dark:text-primary-dark-mode" />
                 {t('dashboard.guardian.reviewsFromVitals')}
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="dark:text-text-dark-muted">
                 {t('dashboard.guardian.reviewsDesc')}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 {reviews.map((review) => (
-                  <div
-                    key={review._id}
-                    className="rounded-lg border border-border dark:border-border-dark p-4 transition-colors"
-                  >
+                    <div
+                      key={review._id}
+                      className="rounded-lg border border-border dark:border-border-dark/40 dark:bg-gradient-to-br dark:from-background-dark-secondary dark:to-background-dark-secondary/90 dark:shadow-[0_2px_12px_rgba(0,0,0,0.2)] p-4 transition-all hover:shadow-md dark:hover:shadow-[0_4px_16px_rgba(0,0,0,0.25)] dark:hover:border-primary-dark-mode/30 dark:hover:-translate-y-0.5"
+                    >
                     <div className="mb-3 flex items-center gap-3">
                       {review.vitalId.profilePhoto ? (
                         <img
@@ -759,15 +768,15 @@ export default function GuardianDashboardPage() {
         )}
 
         {reviews.length === 0 && (
-          <Card className="mt-6 sm:mt-8">
+          <Card className="mt-4 sm:mt-6 md:mt-8 dark:bg-gradient-to-br dark:from-background-dark-secondary dark:to-background-dark-secondary/95 dark:border-border-dark/40 dark:shadow-[0_4px_16px_rgba(0,0,0,0.25)] dark:hover:shadow-[0_6px_24px_rgba(0,0,0,0.3)] dark:hover:border-primary-dark-mode/30 transition-all duration-300">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Star className="h-5 w-5" />
+              <CardTitle className="flex items-center gap-2 dark:text-text-dark">
+                <Star className="h-5 w-5 dark:text-primary-dark-mode" />
                 {t('dashboard.guardian.reviewsTitle')}
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="py-4 text-center text-text-muted dark:text-text-dark-light">
+              <p className="py-4 text-center text-text-muted dark:text-text-dark-muted transition-colors">
                 {t('dashboard.guardian.noReviews')}
               </p>
             </CardContent>

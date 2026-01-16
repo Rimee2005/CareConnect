@@ -3,24 +3,17 @@
 import { useEffect, useState, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, useParams } from 'next/navigation';
-import { io, Socket } from 'socket.io-client';
 import { Navbar } from '@/components/Navbar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useTranslation } from '@/lib/i18n';
 import { ArrowLeft, Send } from 'lucide-react';
-import { Toast } from '@/components/ui/toast';
 
 interface Message {
   _id: string;
-  vitalId: string;
-  guardianId: string;
-  senderId: string;
   senderRole: 'VITAL' | 'GUARDIAN';
   message: string;
   senderName?: string;
-  read: boolean;
   createdAt: string;
 }
 
@@ -28,249 +21,93 @@ export default function ChatPage() {
   const { data: session } = useSession();
   const router = useRouter();
   const params = useParams();
-  const { t } = useTranslation();
-  const [guardianName, setGuardianName] = useState('');
-  const [vitalId, setVitalId] = useState('');
-  const [guardianId, setGuardianId] = useState('');
+  const [guardianName, setGuardianName] = useState('Guardian');
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
-  const [socket, setSocket] = useState<Socket | null>(null);
-  const [connected, setConnected] = useState(false);
-  const [showToast, setShowToast] = useState(false);
-  const [toastMessage, setToastMessage] = useState('');
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const chatIdRef = useRef<string>('');
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const isUserScrolling = useRef(false);
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Scroll to bottom when new messages arrive
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  const scrollToBottom = (force = false) => {
+    if (messagesContainerRef.current) {
+      const container = messagesContainerRef.current;
+      const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
+      
+      if (force || isNearBottom || !isUserScrolling.current) {
+        requestAnimationFrame(() => {
+          if (messagesContainerRef.current) {
+            messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+          }
+        });
+      }
+    }
   };
 
+  // Track user scrolling
   useEffect(() => {
-    scrollToBottom();
+    const container = messagesContainerRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      isUserScrolling.current = true;
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+      scrollTimeoutRef.current = setTimeout(() => {
+        isUserScrolling.current = false;
+      }, 1000);
+    };
+
+    container.addEventListener('scroll', handleScroll);
+    return () => {
+      container.removeEventListener('scroll', handleScroll);
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    scrollToBottom(true);
   }, [messages]);
 
-  // Fetch messages when vitalId and guardianId are available
+  // Focus input on mount
   useEffect(() => {
-    if (vitalId && guardianId) {
-      console.log('📥 Fetching messages on mount:', { vitalId, guardianId });
-      fetchMessages();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [vitalId, guardianId]);
+    const timer = setTimeout(() => {
+      inputRef.current?.focus();
+    }, 100);
+    return () => clearTimeout(timer);
+  }, []);
 
+  // Check session
   useEffect(() => {
     if (session?.user?.role !== 'VITAL') {
       router.push('/');
       return;
     }
-    
-    fetchGuardianInfo();
-  }, [session, router, params.guardianId]);
+  }, [session, router]);
 
-  useEffect(() => {
-    if (!vitalId || !guardianId || !session?.user?.id) {
-      console.log('Waiting for required data:', { vitalId, guardianId, userId: session?.user?.id });
-      return;
-    }
-
-    console.log('Initializing Socket.io connection...', { vitalId, guardianId });
-    
-    // Initialize Socket.io connection
-    const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || window.location.origin;
-    const newSocket = io(socketUrl, {
-      path: '/api/socket/io',
-      transports: ['websocket', 'polling'],
-      reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
-      timeout: 20000,
-    });
-
-    newSocket.on('connect', () => {
-      console.log('✅ Connected to Socket.io', newSocket.id);
-      setConnected(true);
-      
-      // Create chat ID: vitalId-guardianId (must match format on both sides)
-      chatIdRef.current = `${vitalId}-${guardianId}`;
-      console.log('Joining chat room:', chatIdRef.current);
-      
-      // Join the chat room
-      newSocket.emit('join-room', {
-        userId: session.user.id,
-        role: 'VITAL',
-        chatId: chatIdRef.current,
-      });
-
-      // Load message history after a short delay to ensure room is joined
-      setTimeout(() => {
-        fetchMessages();
-      }, 500);
-    });
-
-    newSocket.on('connect_error', (error) => {
-      console.error('❌ Socket.io connection error:', error);
-      setConnected(false);
-      setToastMessage('Failed to connect to chat server. Please refresh the page.');
-      setShowToast(true);
-    });
-
-    newSocket.on('disconnect', (reason) => {
-      console.log('⚠️ Disconnected from Socket.io:', reason);
-      setConnected(false);
-      if (reason === 'io server disconnect') {
-        // Server disconnected, reconnect manually
-        newSocket.connect();
-      }
-    });
-
-    newSocket.on('reconnect', (attemptNumber) => {
-      console.log('🔄 Reconnected to Socket.io after', attemptNumber, 'attempts');
-      setConnected(true);
-      
-      // Rejoin room after reconnection
-      if (chatIdRef.current) {
-        newSocket.emit('join-room', {
-          userId: session.user.id,
-          role: 'VITAL',
-          chatId: chatIdRef.current,
-        });
-      }
-    });
-
-    newSocket.on('receive-message', (data: Message) => {
-      console.log('📨 Received message:', data);
-      setMessages((prev) => {
-        // Remove temporary message if it exists and add the real one
-        const filtered = prev.filter(msg => !msg._id.startsWith('temp-'));
-        // Check if message already exists to avoid duplicates
-        const exists = filtered.some(msg => msg._id === data._id);
-        if (exists) {
-          return filtered;
-        }
-        return [...filtered, data];
-      });
-      scrollToBottom();
-    });
-
-    newSocket.on('message-sent', (data: { messageId: string }) => {
-      console.log('✅ Message sent confirmation:', data.messageId);
-      // Remove temporary message and ensure real message is displayed
-      setMessages((prev) => {
-        const filtered = prev.filter(msg => !msg._id.startsWith('temp-'));
-        return filtered;
-      });
-      // Refetch messages to ensure we have the latest
-      setTimeout(() => fetchMessages(), 500);
-    });
-
-    newSocket.on('message-error', (data: { error: string }) => {
-      console.error('❌ Message error:', data.error);
-      setToastMessage(data.error);
-      setShowToast(true);
-      // Remove temporary message on error
-      setMessages((prev) => prev.filter(msg => !msg._id.startsWith('temp-')));
-    });
-
-    setSocket(newSocket);
-
-    return () => {
-      console.log('Cleaning up socket connection');
-      newSocket.close();
-    };
-  }, [vitalId, guardianId, session]);
-
-  const fetchGuardianInfo = async () => {
-    try {
-      console.log('📥 Fetching guardian info for ID:', params.guardianId);
-      const res = await fetch(`/api/guardians/${params.guardianId}`);
-      if (res.ok) {
-        const data = await res.json();
-        console.log('✅ Guardian data:', data.name, data._id);
-        setGuardianName(data.name);
-        setGuardianId(data._id);
-        
-        // Get Vital profile to get vitalId
-        const vitalRes = await fetch('/api/vital/profile');
-        if (vitalRes.ok) {
-          const vitalData = await vitalRes.json();
-          console.log('✅ Vital data:', vitalData.name, vitalData._id);
-          setVitalId(vitalData._id);
-        } else {
-          console.error('❌ Failed to fetch vital profile:', vitalRes.status);
-        }
-      } else {
-        console.error('❌ Failed to fetch guardian:', res.status);
-      }
-    } catch (error) {
-      console.error('❌ Error fetching guardian:', error);
-    }
-  };
-
-  const fetchMessages = async () => {
-    if (!vitalId || !guardianId) {
-      console.log('⚠️ Cannot fetch messages - missing IDs:', { vitalId, guardianId });
-      return;
-    }
-    
-    try {
-      const chatId = `${vitalId}-${guardianId}`;
-      console.log('📥 Fetching messages for chat:', chatId);
-      const res = await fetch(`/api/chat/${chatId}`);
-      if (res.ok) {
-        const data = await res.json();
-        console.log('✅ Fetched messages:', data.length);
-        setMessages(data);
-        scrollToBottom();
-      } else {
-        const errorData = await res.json().catch(() => ({ error: 'Unknown error' }));
-        console.error('❌ Failed to fetch messages:', errorData);
-      }
-    } catch (error) {
-      console.error('❌ Error fetching messages:', error);
-    }
-  };
-
-  const handleSendMessage = async (e: React.FormEvent) => {
+  const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!message.trim() || !socket || !connected) {
-      if (!connected) {
-        setToastMessage('Not connected to chat server. Please wait for connection...');
-        setShowToast(true);
-      }
+    if (!message.trim()) {
       return;
     }
-    if (!vitalId || !guardianId || !session?.user?.id) return;
 
     const messageText = message.trim();
-    const chatId = `${vitalId}-${guardianId}`;
 
-    console.log('📤 Sending message:', { vitalId, guardianId, chatId, message: messageText });
-
-    // Optimistically add message to UI
-    const tempMessage: Message = {
-      _id: `temp-${Date.now()}`,
-      vitalId,
-      guardianId,
-      senderId: session.user.id,
+    // Add message locally only
+    const newMessage: Message = {
+      _id: `local-${Date.now()}`,
       senderRole: 'VITAL',
       message: messageText,
-      read: false,
       createdAt: new Date().toISOString(),
     };
-    setMessages((prev) => [...prev, tempMessage]);
+    
+    setMessages((prev) => [...prev, newMessage]);
     setMessage('');
-
-    // Emit message via Socket.io
-    socket.emit('send-message', {
-      vitalId,
-      guardianId,
-      senderId: session.user.id,
-      senderRole: 'VITAL',
-      message: messageText,
-      chatId,
-    });
   };
 
   return (
@@ -286,30 +123,21 @@ export default function ChatPage() {
           Back
         </Button>
 
-        <Card className="mx-auto max-w-4xl">
-          <CardHeader className="border-b">
-            <div className="flex items-center justify-between">
-              <CardTitle>Chat with {guardianName || 'Guardian'}</CardTitle>
-              <div className="flex items-center gap-2">
-                <div
-                  className={`h-2 w-2 rounded-full ${
-                    connected ? 'bg-success' : 'bg-error'
-                  }`}
-                />
-                <span className="text-sm text-text-muted">
-                  {connected ? 'Connected' : 'Connecting...'}
-                </span>
-              </div>
-            </div>
+        <Card className="mx-auto max-w-4xl dark:bg-background-dark-secondary dark:border-border-dark/60">
+          <CardHeader className="border-b dark:border-border-dark/60">
+            <CardTitle className="dark:text-text-dark">Chat with {guardianName}</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             {/* Chat Messages Area */}
-            <div className="h-96 overflow-y-auto p-4 space-y-4 bg-background-secondary">
+            <div 
+              ref={messagesContainerRef}
+              className="h-96 overflow-y-auto p-4 space-y-4 bg-background-secondary dark:bg-background-dark-secondary/60"
+            >
               {messages.length === 0 ? (
-                <div className="flex items-center justify-center h-full text-text-muted">
+                <div className="flex items-center justify-center h-full text-text-muted dark:text-text-dark-muted">
                   <div className="text-center">
-                    <p className="text-lg mb-2">💬 Start a conversation</p>
-                    <p className="text-sm">Send a message to begin chatting</p>
+                    <p className="text-lg mb-2 dark:text-text-dark">💬 Start a conversation</p>
+                    <p className="text-sm dark:text-text-dark-muted">Send a message to begin chatting</p>
                   </div>
                 </div>
               ) : (
@@ -321,19 +149,19 @@ export default function ChatPage() {
                       className={`flex ${isSender ? 'justify-end' : 'justify-start'}`}
                     >
                       <div
-                        className={`max-w-xs rounded-lg px-4 py-2 ${
+                        className={`max-w-xs rounded-lg px-4 py-2.5 ${
                           isSender
-                            ? 'bg-primary text-white'
-                            : 'bg-white text-text border'
+                            ? 'bg-primary text-white dark:bg-primary-dark-mode dark:text-white shadow-sm'
+                            : 'bg-white text-text border border-border dark:bg-background-dark dark:text-text-dark dark:border-border-dark/60 shadow-sm'
                         }`}
                       >
                         {!isSender && (
-                          <p className="text-xs font-semibold mb-1 opacity-80">
+                          <p className="text-xs font-semibold mb-1.5 opacity-90 dark:opacity-100 dark:text-text-dark">
                             {msg.senderName || guardianName}
                           </p>
                         )}
-                        <p>{msg.message}</p>
-                        <p className={`text-xs mt-1 ${isSender ? 'opacity-70' : 'text-text-muted'}`}>
+                        <p className={`${isSender ? 'text-white' : 'text-text dark:text-text-dark'}`}>{msg.message}</p>
+                        <p className={`text-xs mt-1.5 ${isSender ? 'opacity-80 text-white/90' : 'text-text-muted dark:text-text-dark-muted'}`}>
                           {new Date(msg.createdAt).toLocaleTimeString([], {
                             hour: '2-digit',
                             minute: '2-digit',
@@ -344,39 +172,38 @@ export default function ChatPage() {
                   );
                 })
               )}
-              <div ref={messagesEndRef} />
             </div>
 
             {/* Message Input */}
             <form
               onSubmit={handleSendMessage}
-              className="border-t border-border dark:border-border-dark p-4 flex gap-2 bg-white dark:bg-background-dark-secondary transition-colors"
+              className="border-t border-border dark:border-border-dark/60 p-4 flex gap-2 bg-white dark:bg-background-dark transition-colors"
             >
               <Input
+                ref={inputRef}
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 placeholder="Type your message..."
-                className="flex-1"
-                disabled={!connected}
+                className="flex-1 dark:bg-background-dark-secondary dark:border-border-dark/60 dark:text-text-dark dark:placeholder:text-text-dark-muted/80 dark:focus-visible:ring-primary-dark-mode/50 dark:focus-visible:border-primary-dark-mode/60"
+                autoFocus
+                autoComplete="off"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey && message.trim()) {
+                    e.preventDefault();
+                    handleSendMessage(e as any);
+                  }
+                }}
               />
               <Button
                 type="submit"
-                disabled={!message.trim() || !connected}
+                disabled={!message.trim()}
+                className="dark:bg-primary-dark-mode dark:hover:bg-primary-dark-mode/90 dark:text-white dark:border-primary-dark-mode dark:shadow-[0_2px_8px_rgba(45,212,191,0.3)] dark:disabled:opacity-50 dark:disabled:cursor-not-allowed transition-all"
               >
                 <Send className="h-4 w-4" />
               </Button>
             </form>
           </CardContent>
         </Card>
-
-        {showToast && (
-          <Toast
-            message={toastMessage}
-            type="error"
-            onClose={() => setShowToast(false)}
-            duration={5000}
-          />
-        )}
       </div>
     </div>
   );

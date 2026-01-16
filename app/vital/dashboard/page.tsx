@@ -143,6 +143,10 @@ export default function VitalDashboardPage() {
 
   // Get availability status for guardian
   const getThisWeekAvailability = (guardian: Guardian): 'high' | 'medium' | 'low' => {
+    if (!guardian?.availability?.days || !Array.isArray(guardian.availability.days)) {
+      return 'low';
+    }
+    
     const today = new Date();
     const dayOfWeek = today.getDay();
     const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -210,19 +214,19 @@ export default function VitalDashboardPage() {
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-background dark:bg-gradient-to-br dark:from-background-dark dark:via-background-dark-secondary/80 dark:to-background-dark transition-colors">
       <Navbar />
-      <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-text">{t('dashboard.vital.welcome')}, {profile.name}!</h1>
-          <p className="text-text-muted">{t('dashboard.vital.subtitle')}</p>
+      <div className="container mx-auto px-3 py-4 sm:px-4 sm:py-6 md:px-6 md:py-8">
+        <div className="mb-4 sm:mb-6 md:mb-8">
+          <h1 className="text-xl font-bold text-text sm:text-2xl md:text-3xl dark:text-text-dark transition-colors">{t('dashboard.vital.welcome')}, {profile.name}!</h1>
+          <p className="text-xs text-text-muted sm:text-sm md:text-base dark:text-text-dark-muted transition-colors mt-1">{t('dashboard.vital.subtitle')}</p>
         </div>
 
-        <div className="mb-8 grid gap-6 md:grid-cols-2">
-          <Card>
+        <div className="mb-4 grid gap-4 sm:gap-5 sm:mb-6 md:mb-8 md:gap-6 grid-cols-1 md:grid-cols-2">
+          <Card className="dark:bg-gradient-to-br dark:from-background-dark-secondary dark:to-background-dark-secondary/95 dark:border-border-dark/40 dark:shadow-[0_4px_16px_rgba(0,0,0,0.25)] dark:hover:shadow-[0_6px_24px_rgba(0,0,0,0.3)] dark:hover:border-primary-dark-mode/30 dark:hover:-translate-y-0.5 transition-all duration-300">
             <CardHeader>
-              <CardTitle>{t('dashboard.vital.myProfile')}</CardTitle>
-              <CardDescription>{t('dashboard.vital.viewEdit')}</CardDescription>
+              <CardTitle className="dark:text-text-dark">{t('dashboard.vital.myProfile')}</CardTitle>
+              <CardDescription className="dark:text-text-dark-muted">{t('dashboard.vital.viewEdit')}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex items-center gap-4">
@@ -240,26 +244,26 @@ export default function VitalDashboardPage() {
                   </div>
                 )}
                 <div>
-                  <p className="font-semibold">{profile.name}</p>
-                  <p className="text-sm text-text-muted">{t('dashboard.vital.age')}: {profile.age}</p>
+                  <p className="font-semibold dark:text-text-dark transition-colors">{profile.name}</p>
+                  <p className="text-sm text-text-muted dark:text-text-dark-muted transition-colors">{t('dashboard.vital.age')}: {profile.age}</p>
                 </div>
               </div>
               <Link href="/vital/profile/create">
-                <Button variant="outline" className="mt-4 w-full">
+                <Button variant="outline" className="mt-4 w-full dark:border-border-dark/50 dark:hover:bg-background-dark-secondary/80 dark:hover:border-primary-dark-mode/40 dark:hover:shadow-[0_0_8px_rgba(45,212,191,0.15)] dark:focus:ring-2 dark:focus:ring-primary-dark-mode/40 transition-all">
                   {t('dashboard.vital.editProfile')}
                 </Button>
               </Link>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="dark:bg-gradient-to-br dark:from-background-dark-secondary dark:to-background-dark-secondary/95 dark:border-border-dark/40 dark:shadow-[0_4px_16px_rgba(0,0,0,0.25)] dark:hover:shadow-[0_6px_24px_rgba(0,0,0,0.3)] dark:hover:border-primary-dark-mode/30 dark:hover:-translate-y-0.5 transition-all duration-300">
             <CardHeader>
-              <CardTitle>{t('dashboard.vital.browseGuardiansTitle')}</CardTitle>
-              <CardDescription>{t('dashboard.vital.browseGuardiansDesc')}</CardDescription>
+              <CardTitle className="dark:text-text-dark">{t('dashboard.vital.browseGuardiansTitle')}</CardTitle>
+              <CardDescription className="dark:text-text-dark-muted">{t('dashboard.vital.browseGuardiansDesc')}</CardDescription>
             </CardHeader>
             <CardContent>
               <Link href="/vital/guardians">
-                <Button className="w-full">
+                <Button className="w-full dark:shadow-[0_0_8px_rgba(45,212,191,0.2)] dark:hover:shadow-[0_0_12px_rgba(45,212,191,0.25)] dark:focus:ring-2 dark:focus:ring-primary-dark-mode/40 transition-all">
                   <Search className="mr-2 h-4 w-4" />
                   {t('vital.browse')}
                 </Button>
@@ -268,40 +272,17 @@ export default function VitalDashboardPage() {
           </Card>
         </div>
 
-        {/* Map View - Nearest Guardians Only */}
-        {featureFlags.MAP_VIEW && vitalLocation && nearestGuardians.length > 0 && (
-          <Card className="mb-8">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MapPin className="h-5 w-5" />
-                {t('dashboard.vital.nearestGuardians')}
-              </CardTitle>
-              <CardDescription>
-                {t('dashboard.vital.nearestGuardiansDesc')}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <LeafletMap
-                guardians={nearestGuardians}
-                vitalLocation={vitalLocation}
-                radius={10}
-                onGuardianClick={(guardian) => {
-                  router.push(`/vital/guardians/${guardian._id}`);
-                }}
-              />
-            </CardContent>
-          </Card>
-        )}
+   
 
         {/* Care History Section */}
         {allBookings.length > 0 && (
-          <Card className="mb-8">
+          <Card className="mb-4 sm:mb-6 md:mb-8 dark:bg-gradient-to-br dark:from-background-dark-secondary dark:to-background-dark-secondary/95 dark:border-border-dark/40 dark:shadow-[0_4px_16px_rgba(0,0,0,0.25)] dark:hover:shadow-[0_6px_24px_rgba(0,0,0,0.3)] dark:hover:border-primary-dark-mode/30 transition-all duration-300">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
+              <CardTitle className="flex items-center gap-2 dark:text-text-dark">
+                <Calendar className="h-5 w-5 dark:text-primary-dark-mode" />
                 {t('dashboard.vital.careHistory')}
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="dark:text-text-dark-muted">
                 {t('dashboard.vital.careHistoryDesc')}
               </CardDescription>
             </CardHeader>
@@ -311,36 +292,36 @@ export default function VitalDashboardPage() {
                 {pendingBookings.map((booking) => (
                   <div
                     key={booking._id}
-                    className="flex items-center justify-between rounded-lg border border-yellow-200 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-900/20 p-4 animate-pulse"
+                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-lg border border-yellow-200 dark:border-border-dark/50 dark:bg-background-dark-secondary dark:shadow-[0_2px_8px_rgba(0,0,0,0.2)] p-3 sm:p-4 animate-pulse transition-all"
                   >
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
                       {booking.guardianId.profilePhoto ? (
                         <img
                           src={booking.guardianId.profilePhoto}
                           alt={booking.guardianId.name}
-                          className="h-12 w-12 rounded-full object-cover"
+                          className="h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0 rounded-full object-cover ring-2 ring-yellow-500/20 dark:ring-border-dark/40"
                         />
                       ) : (
-                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-yellow-100 dark:bg-yellow-800">
-                          <span className="text-lg text-yellow-700 dark:text-yellow-300">
+                        <div className="flex h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0 items-center justify-center rounded-full bg-yellow-100 dark:bg-background-dark/60 ring-2 ring-yellow-500/20 dark:ring-border-dark/40">
+                          <span className="text-base sm:text-lg text-yellow-700 dark:text-text-dark font-semibold">
                             {booking.guardianId.name.charAt(0).toUpperCase()}
                           </span>
                         </div>
                       )}
-                      <div>
-                        <p className="font-semibold">{booking.guardianId.name}</p>
-                        <Badge className="bg-yellow-500 text-white animate-pulse">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm sm:text-base font-semibold dark:text-text-dark transition-colors truncate">{booking.guardianId.name}</p>
+                        <Badge className="bg-amber-500 dark:bg-amber-500/90 dark:text-white text-white animate-pulse shadow-sm font-medium text-xs mt-1">
                           {t('booking.status.pending')}
                         </Badge>
-                        <p className="mt-1 text-xs text-text-muted">
+                        <p className="mt-1 text-xs text-text-muted dark:text-text-dark-light transition-colors">
                           {t('dashboard.vital.awaitingResponse')}
                         </p>
                       </div>
                     </div>
-                    {booking.guardianId && (
-                      <Link href={`/vital/chat/${(booking.guardianId as any)._id || ''}`}>
-                        <Button variant="outline" size="sm">
-                          <MessageSquare className="mr-2 h-4 w-4" />
+                    {booking.guardianId && (booking.guardianId as any)?._id && (
+                      <Link href={`/vital/chat/${(booking.guardianId as any)._id}`} className="w-full sm:w-auto">
+                        <Button variant="outline" size="sm" className="w-full sm:w-auto text-xs sm:text-sm dark:border-primary-dark-mode/60 dark:text-primary-dark-mode dark:hover:bg-primary-dark-mode/15 dark:hover:border-primary-dark-mode dark:hover:shadow-[0_0_8px_rgba(45,212,191,0.25)] dark:focus:ring-2 dark:focus:ring-primary-dark-mode/50 dark:active:bg-primary-dark-mode/20 transition-all">
+                          <MessageSquare className="mr-2 h-3 w-3 sm:h-4 sm:w-4" />
                           {t('dashboard.vital.chat')}
                         </Button>
                       </Link>
@@ -352,41 +333,41 @@ export default function VitalDashboardPage() {
                 {activeBookings.map((booking) => (
                   <div
                     key={booking._id}
-                    className="flex items-center justify-between rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 p-4"
+                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-lg border border-blue-200 dark:border-border-dark/50 dark:bg-background-dark-secondary dark:shadow-[0_2px_8px_rgba(0,0,0,0.2)] p-3 sm:p-4 transition-all"
                     style={{
                       animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite'
                     }}
                   >
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
                       {booking.guardianId.profilePhoto ? (
                         <img
                           src={booking.guardianId.profilePhoto}
                           alt={booking.guardianId.name}
-                          className="h-12 w-12 rounded-full object-cover ring-2 ring-blue-400"
+                          className="h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0 rounded-full object-cover ring-2 ring-blue-400/30 dark:ring-border-dark/40"
                         />
                       ) : (
-                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-800 ring-2 ring-blue-400">
-                          <span className="text-lg text-blue-700 dark:text-blue-300">
+                        <div className="flex h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-background-dark/60 ring-2 ring-blue-400/30 dark:ring-border-dark/40">
+                          <span className="text-base sm:text-lg text-blue-700 dark:text-text-dark font-semibold">
                             {booking.guardianId.name.charAt(0).toUpperCase()}
                           </span>
                         </div>
                       )}
-                      <div>
-                        <p className="font-semibold">{booking.guardianId.name}</p>
-                        <Badge className="bg-blue-500 text-white">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm sm:text-base font-semibold dark:text-text-dark transition-colors truncate">{booking.guardianId.name}</p>
+                        <Badge className="bg-blue-500 dark:bg-cyan-500 dark:text-white text-white shadow-sm font-medium text-xs mt-1">
                           {booking.status === 'ONGOING' ? t('dashboard.vital.active') : t('booking.status.accepted')}
                         </Badge>
                         {booking.startDate && (
-                          <p className="mt-1 text-xs text-text-muted">
+                          <p className="mt-1 text-xs text-text-muted dark:text-text-dark-light transition-colors">
                             {t('dashboard.vital.started')}: {new Date(booking.startDate).toLocaleDateString((i18n.language || 'en') === 'hi' ? 'hi-IN' : 'en-US')}
                           </p>
                         )}
                       </div>
                     </div>
-                    {booking.guardianId && (
-                      <Link href={`/vital/chat/${(booking.guardianId as any)._id || ''}`}>
-                        <Button variant="outline" size="sm">
-                          <MessageSquare className="mr-2 h-4 w-4" />
+                    {booking.guardianId && (booking.guardianId as any)?._id && (
+                      <Link href={`/vital/chat/${(booking.guardianId as any)._id}`} className="w-full sm:w-auto">
+                        <Button variant="outline" size="sm" className="w-full sm:w-auto text-xs sm:text-sm dark:border-primary-dark-mode/60 dark:text-primary-dark-mode dark:hover:bg-primary-dark-mode/15 dark:hover:border-primary-dark-mode dark:hover:shadow-[0_0_8px_rgba(45,212,191,0.25)] dark:focus:ring-2 dark:focus:ring-primary-dark-mode/50 dark:active:bg-primary-dark-mode/20 transition-all">
+                          <MessageSquare className="mr-2 h-3 w-3 sm:h-4 sm:w-4" />
                           {t('dashboard.vital.chat')}
                         </Button>
                       </Link>
@@ -398,59 +379,72 @@ export default function VitalDashboardPage() {
                 {completedBookings.map((booking) => {
                   // Find guardian data for availability strip
                   const guardianData = guardians.find(g => 
-                    g._id === (booking.guardianId as any)._id || g.name === booking.guardianId.name
+                    g._id === (booking.guardianId as any)?._id || g.name === booking.guardianId?.name
                   );
-                  const availabilityStatus = guardianData ? getThisWeekAvailability(guardianData) : null;
+                  const availabilityStatus = guardianData && guardianData.availability ? getThisWeekAvailability(guardianData) : null;
                   
                   return (
                     <div
                       key={booking._id}
-                      className="rounded-lg border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 p-4 transition-all duration-300 hover:shadow-md"
+                      className="rounded-lg border border-green-200 dark:border-border-dark/50 dark:bg-background-dark-secondary dark:shadow-[0_2px_8px_rgba(0,0,0,0.2)] p-3 sm:p-4 transition-all duration-300 hover:shadow-md dark:hover:shadow-[0_4px_12px_rgba(0,0,0,0.25)]"
                     >
                       {/* This Week's Availability Strip for Past Guardian */}
                       {availabilityStatus && (
-                        <div className={`h-1.5 w-full mb-3 rounded-t ${
-                          availabilityStatus === 'high' ? 'bg-green-500' :
-                          availabilityStatus === 'medium' ? 'bg-yellow-500' :
-                          'bg-red-500'
-                        }`} title={`This Week's Availability: ${availabilityStatus}`} />
+                        <div 
+                          className="h-1.5 w-full mb-3 rounded-t"
+                          style={{
+                            background: availabilityStatus === 'high' 
+                              ? 'linear-gradient(to right, #2DD4BF, #3B82F6)' 
+                              : availabilityStatus === 'medium' 
+                              ? 'linear-gradient(to right, #FBBF24, #FF6B6B)'
+                              : 'linear-gradient(to right, #FF6B6B, #EF4444)'
+                          }}
+                          title={`This Week's Availability: ${availabilityStatus}`}
+                        />
                       )}
                       
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                        <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
                           {booking.guardianId.profilePhoto ? (
                             <img
                               src={booking.guardianId.profilePhoto}
                               alt={booking.guardianId.name}
-                              className="h-12 w-12 rounded-full object-cover"
+                              className="h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0 rounded-full object-cover ring-2 ring-green-500/20 dark:ring-border-dark/40"
                             />
                           ) : (
-                            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-100 dark:bg-green-800">
-                              <span className="text-lg text-green-700 dark:text-green-300">
+                            <div className="flex h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0 items-center justify-center rounded-full bg-green-100 dark:bg-background-dark/60 ring-2 ring-green-500/20 dark:ring-border-dark/40">
+                              <span className="text-base sm:text-lg text-green-700 dark:text-text-dark font-semibold">
                                 {booking.guardianId.name.charAt(0).toUpperCase()}
                               </span>
                             </div>
                           )}
-                          <div>
-                            <p className="font-semibold">{booking.guardianId.name}</p>
-                            <Badge className="bg-green-500 text-white">
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm sm:text-base font-semibold dark:text-text-dark transition-colors truncate">{booking.guardianId.name}</p>
+                            <Badge className="bg-[#2DD4BF] dark:bg-[#2DD4BF] dark:text-white text-white shadow-sm font-medium text-xs mt-1">
                               {t('dashboard.vital.completed')}
                             </Badge>
-                            <p className="mt-1 text-xs text-text-muted">
+                            <p className="mt-1 text-xs text-text-muted dark:text-text-dark-light transition-colors">
                               {t('dashboard.vital.completedOn')} {new Date(booking.createdAt).toLocaleDateString((i18n.language || 'en') === 'hi' ? 'hi-IN' : 'en-US')}
                             </p>
                           </div>
                         </div>
-                        <div className="flex gap-2">
-                          {(booking.guardianId as any)._id && (
-                            <Link href={`/vital/guardians/${(booking.guardianId as any)._id}`}>
-                              <Button size="sm" variant="outline" className="whitespace-nowrap">
+                        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                          {(booking.guardianId as any)?._id && (
+                            <Link href={`/vital/guardians/${(booking.guardianId as any)._id}`} className="flex-1 sm:flex-none">
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                className="w-full sm:w-auto text-xs sm:text-sm whitespace-nowrap dark:border-border-dark/50 dark:hover:bg-background-dark-secondary/80 dark:hover:border-primary-dark-mode/40 dark:text-primary-dark-mode dark:hover:shadow-[0_0_6px_rgba(45,212,191,0.12)] dark:focus:ring-2 dark:focus:ring-primary-dark-mode/40 transition-all"
+                              >
                                 {t('dashboard.vital.bookAgain')}
                               </Button>
                             </Link>
                           )}
-                          <Link href={`/vital/reviews/create/${booking._id}`}>
-                            <Button size="sm" className="bg-green-500 hover:bg-green-600">
+                          <Link href={`/vital/reviews/create/${booking._id}`} className="flex-1 sm:flex-none">
+                            <Button 
+                              size="sm" 
+                              className="w-full sm:w-auto text-xs sm:text-sm bg-[#2DD4BF] hover:bg-[#2DD4BF]/90 dark:bg-[#2DD4BF] dark:hover:bg-[#2DD4BF]/90 text-white shadow-sm font-medium"
+                            >
                               {t('dashboard.vital.leaveReview')}
                             </Button>
                           </Link>
@@ -465,16 +459,16 @@ export default function VitalDashboardPage() {
         )}
 
         {featureFlags.SOS_EMERGENCY && (
-          <Card className="mb-8">
+          <Card className="mb-4 sm:mb-6 md:mb-8 dark:bg-gradient-to-br dark:from-background-dark-secondary dark:to-background-dark-secondary/95 dark:border-border-dark/40 dark:shadow-[0_4px_16px_rgba(0,0,0,0.25)] dark:hover:shadow-[0_6px_24px_rgba(0,0,0,0.3)] dark:hover:border-primary-dark-mode/30 transition-all duration-300">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <AlertCircle className="h-5 w-5 text-error" />
+              <CardTitle className="flex items-center gap-2 dark:text-text-dark">
+                <AlertCircle className="h-5 w-5 text-error dark:text-secondary-dark-mode" />
                 {t('dashboard.vital.emergencySupport')}
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="mb-4 text-text-muted">{t('feature.sos.comingSoon')}</p>
-              <Button variant="outline" disabled>
+              <p className="mb-4 text-text-muted dark:text-text-dark-muted transition-colors">{t('feature.sos.comingSoon')}</p>
+              <Button variant="outline" disabled className="dark:border-border-dark/40 dark:text-text-dark-muted">
                 {t('dashboard.vital.comingSoon')}
               </Button>
             </CardContent>

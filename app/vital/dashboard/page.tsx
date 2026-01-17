@@ -245,6 +245,20 @@ export default function VitalDashboardPage() {
     );
   }
 
+  // If profile is still loading or doesn't exist, show loading
+  if (!profile || loading) {
+    return (
+      <div className="min-h-screen">
+        <Navbar />
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex items-center justify-center">
+            <p>{t('common.loading')}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const completedBookings = bookings.filter((b) => b.status === 'COMPLETED');
   const activeBookings = bookings.filter((b) => b.status === 'ACCEPTED' || b.status === 'ONGOING');
   const pendingBookings = bookings.filter((b) => b.status === 'PENDING');

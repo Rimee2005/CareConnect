@@ -103,15 +103,29 @@ export default function VitalDashboardPage() {
 
   const fetchProfile = async () => {
     try {
-      const res = await fetch('/api/vital/profile');
+      const res = await fetch('/api/vital/profile', {
+        cache: 'no-store',
+        credentials: 'include',
+      });
+      
       if (res.ok) {
         const data = await res.json();
         setProfile(data);
       } else if (res.status === 404) {
+        // Profile doesn't exist - user needs to create one
+        setProfile(null);
+      } else {
+        // Other error (401, 500, etc.)
+        console.error('Failed to fetch profile:', res.status, res.statusText);
+        const errorData = await res.json().catch(() => ({}));
+        console.error('Error details:', errorData);
+        // Still set profile to null so user can create one
         setProfile(null);
       }
     } catch (error) {
       console.error('Failed to fetch profile:', error);
+      // On network error, still allow user to proceed
+      setProfile(null);
     } finally {
       setLoading(false);
     }
@@ -119,10 +133,15 @@ export default function VitalDashboardPage() {
 
   const fetchBookings = async () => {
     try {
-      const res = await fetch('/api/bookings');
+      const res = await fetch('/api/bookings', {
+        cache: 'no-store',
+        credentials: 'include',
+      });
       if (res.ok) {
         const data = await res.json();
         setBookings(data);
+      } else {
+        console.error('Failed to fetch bookings:', res.status, res.statusText);
       }
     } catch (error) {
       console.error('Failed to fetch bookings:', error);
@@ -131,10 +150,15 @@ export default function VitalDashboardPage() {
 
   const fetchGuardians = async () => {
     try {
-      const res = await fetch('/api/guardians');
+      const res = await fetch('/api/guardians', {
+        cache: 'no-store',
+        credentials: 'include',
+      });
       if (res.ok) {
         const data = await res.json();
         setGuardians(data);
+      } else {
+        console.error('Failed to fetch guardians:', res.status, res.statusText);
       }
     } catch (error) {
       console.error('Failed to fetch guardians:', error);
@@ -166,18 +190,38 @@ export default function VitalDashboardPage() {
   };
 
 
-  if (status === 'loading' || loading) {
+  // Only show loading if we're still checking authentication
+  // Don't block on profile loading - show create profile screen if needed
+  if (status === 'loading') {
     return (
       <div className="min-h-screen">
         <Navbar />
         <div className="container mx-auto px-4 py-8">
-          <p>{t('common.loading')}</p>
+          <div className="flex items-center justify-center">
+            <p>{t('common.loading')}</p>
+          </div>
         </div>
       </div>
     );
   }
 
-  if (!profile) {
+  // If unauthenticated, redirect (handled by useEffect, but show loading while redirecting)
+  if (status === 'unauthenticated') {
+    return (
+      <div className="min-h-screen">
+        <Navbar />
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex items-center justify-center">
+            <p>{t('common.loading')}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // If authenticated but no profile, show create profile screen
+  // This handles both "profile doesn't exist" and "profile still loading" cases
+  if (!profile && !loading) {
     return (
       <div className="min-h-screen">
         <Navbar />

@@ -79,8 +79,15 @@ export async function GET(
       }
 
       return {
-        ...msg,
+        _id: msg._id.toString(),
+        vitalId: msg.vitalId.toString(),
+        guardianId: msg.guardianId.toString(),
+        senderId: msg.senderId.toString(),
+        senderRole: msg.senderRole,
+        message: msg.message,
+        read: msg.read,
         senderName,
+        createdAt: msg.createdAt.toISOString(),
       };
     });
 

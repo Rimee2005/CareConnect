@@ -8,6 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ArrowLeft, Send } from 'lucide-react';
+import { getSocket } from '@/lib/socket';
+import type { Socket } from 'socket.io-client';
 
 interface Message {
   _id: string;
@@ -24,10 +26,16 @@ export default function GuardianChatPage() {
   const [vitalName, setVitalName] = useState('Vital');
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
+  const [isConnected, setIsConnected] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const isUserScrolling = useRef(false);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const socketRef = useRef<Socket | null>(null);
+  const vitalIdRef = useRef<string | null>(null);
+  const guardianIdRef = useRef<string | null>(null);
+  const chatIdRef = useRef<string | null>(null);
 
   // Scroll to bottom when new messages arrive
   const scrollToBottom = (force = false) => {
@@ -81,33 +89,185 @@ export default function GuardianChatPage() {
     return () => clearTimeout(timer);
   }, []);
 
-  // Check session
+  // Check session and initialize
   useEffect(() => {
     if (session?.user?.role !== 'GUARDIAN') {
       router.push('/');
       return;
     }
-  }, [session, router]);
 
-  const handleSendMessage = (e: React.FormEvent) => {
+    if (!session?.user?.id) return;
+
+    const initializeChat = async () => {
+      try {
+        const vitalId = params.vitalId as string;
+        vitalIdRef.current = vitalId;
+
+        // Get guardian profile to get guardianId
+        const guardianRes = await fetch('/api/guardian/profile');
+        if (!guardianRes.ok) throw new Error('Failed to fetch guardian profile');
+        const guardianData = await guardianRes.json();
+        const guardianId = guardianData._id;
+        guardianIdRef.current = guardianId;
+
+        const chatId = `${vitalId}-${guardianId}`;
+        chatIdRef.current = chatId;
+
+        // Load existing messages
+        const messagesRes = await fetch(`/api/chat/${chatId}`);
+        if (messagesRes.ok) {
+          const messagesData = await messagesRes.json();
+          // API returns messages array directly, not wrapped in an object
+          const loadedMessages = Array.isArray(messagesData) ? messagesData : (messagesData.messages || []);
+          setMessages(loadedMessages);
+        }
+
+        // Get vital name
+        const vitalRes = await fetch(`/api/vitals/${vitalId}`);
+        if (vitalRes.ok) {
+          const vitalData = await vitalRes.json();
+          setVitalName(vitalData.name || 'Vital');
+        }
+
+        // Initialize socket connection
+        try {
+          const socket = getSocket();
+          socketRef.current = socket;
+
+          // Connection handlers
+          socket.on('connect', () => {
+            console.log('✅ Socket connected');
+            setIsConnected(true);
+
+            // Register user
+            socket.emit('register-user', { userId: session.user.id });
+
+            // Join chat room
+            socket.emit('join-room', {
+              userId: session.user.id,
+              role: 'GUARDIAN',
+              chatId: chatId,
+            });
+          });
+
+          socket.on('disconnect', () => {
+            console.log('❌ Socket disconnected');
+            setIsConnected(false);
+          });
+
+          socket.on('connect_error', (error) => {
+            console.error('❌ Socket connection error:', error);
+            setIsConnected(false);
+          });
+
+          // Listen for new messages
+          socket.on('receive-message', (messageData: Message) => {
+            console.log('📨 Received message:', messageData);
+            setMessages((prev) => {
+              // Avoid duplicates
+              if (prev.some((msg) => msg._id === messageData._id)) {
+                return prev;
+              }
+              return [...prev, messageData];
+            });
+          });
+
+          socket.on('room-joined', (data) => {
+            console.log('✅ Joined room:', data);
+          });
+
+          // If already connected, join room immediately
+          if (socket.connected) {
+            socket.emit('register-user', { userId: session.user.id });
+            socket.emit('join-room', {
+              userId: session.user.id,
+              role: 'GUARDIAN',
+              chatId: chatId,
+            });
+          }
+
+          setIsLoading(false);
+        } catch (socketError) {
+          console.error('Socket initialization error:', socketError);
+          setIsLoading(false);
+        }
+      } catch (error) {
+        console.error('Chat initialization error:', error);
+        setIsLoading(false);
+      }
+    };
+
+    initializeChat();
+
+    // Cleanup
+    return () => {
+      // Don't disconnect socket (it's a singleton)
+      // Just remove event listeners
+      if (socketRef.current) {
+        socketRef.current.off('connect');
+        socketRef.current.off('disconnect');
+        socketRef.current.off('connect_error');
+        socketRef.current.off('receive-message');
+        socketRef.current.off('room-joined');
+      }
+    };
+  }, [session, router, params.vitalId]);
+
+  const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!message.trim()) {
+    if (!message.trim() || !session?.user?.id || !vitalIdRef.current || !guardianIdRef.current || !chatIdRef.current) {
       return;
     }
 
     const messageText = message.trim();
+    const chatId = chatIdRef.current;
 
-    // Add message locally only
-    const newMessage: Message = {
-      _id: `local-${Date.now()}`,
+    // Optimistic update
+    const tempMessage: Message = {
+      _id: `temp-${Date.now()}`,
       senderRole: 'GUARDIAN',
       message: messageText,
       createdAt: new Date().toISOString(),
     };
     
-    setMessages((prev) => [...prev, newMessage]);
+    setMessages((prev) => [...prev, tempMessage]);
     setMessage('');
+
+    try {
+      // Send message via API (which will save to DB and emit via socket)
+      const response = await fetch(`/api/chat/${chatId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          vitalId: vitalIdRef.current,
+          guardianId: guardianIdRef.current,
+          senderId: session.user.id,
+          senderRole: 'GUARDIAN',
+          message: messageText,
+        }),
+      });
+
+      if (response.ok) {
+        const savedMessage = await response.json();
+        // Replace temp message with saved message
+        setMessages((prev) => 
+          prev.map((msg) => 
+            msg._id === tempMessage._id ? savedMessage : msg
+          )
+        );
+      } else {
+        // Remove temp message on error
+        setMessages((prev) => prev.filter((msg) => msg._id !== tempMessage._id));
+        setMessage(messageText); // Restore message
+        console.error('Failed to send message');
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+      // Remove temp message on error
+      setMessages((prev) => prev.filter((msg) => msg._id !== tempMessage._id));
+      setMessage(messageText); // Restore message
+    }
   };
 
   return (
@@ -125,7 +285,16 @@ export default function GuardianChatPage() {
 
         <Card className="mx-auto max-w-4xl dark:bg-background-dark-secondary dark:border-border-dark/60">
           <CardHeader className="border-b dark:border-border-dark/60">
-            <CardTitle className="dark:text-text-dark">Chat with {vitalName}</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="dark:text-text-dark">Chat with {vitalName}</CardTitle>
+              {isLoading ? (
+                <span className="text-sm text-text-muted dark:text-text-dark-muted">Loading...</span>
+              ) : (
+                <span className={`text-xs ${isConnected ? 'text-green-500' : 'text-red-500'}`}>
+                  {isConnected ? '🟢 Connected' : '🔴 Disconnected'}
+                </span>
+              )}
+            </div>
           </CardHeader>
           <CardContent className="p-0">
             {/* Chat Messages Area */}

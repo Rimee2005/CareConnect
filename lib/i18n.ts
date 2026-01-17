@@ -795,10 +795,7 @@ const resources = {
       'help.faq.account.a3': 'We accept major credit cards, debit cards, and digital payment methods. All payments are processed securely through our payment partners.',
       'help.faq.account.q4': 'How do I cancel my account?',
       'help.faq.account.a4': 'Contact our support team to request account cancellation. Please note that you may need to complete any active bookings first.',
-      // Testimonials
-      'home.testimonials.priya.name': 'Priya S.',
-      'home.testimonials.rajesh.name': 'Rajesh K.',
-      'home.testimonials.anjali.name': 'Anjali M.',
+      // Testimonials badges
       'home.testimonials.badge.vital': 'Vital',
       'home.testimonials.badge.guardian': 'Guardian',
       
@@ -811,13 +808,8 @@ const resources = {
       'form.subject.placeholder': 'Enter subject',
       'form.message': 'Message',
       'form.message.placeholder': 'Enter your message',
-      'form.contactPreference': 'Contact Preference',
-      'form.contactPreference.phone': 'Phone',
-      'form.contactPreference.email': 'Email',
-      'form.contactPreference.both': 'Both',
       
       // Additional guardian form
-      'form.specialization.placeholder': 'Enter your areas of expertise, separated by commas',
       'form.failedToLoad': 'Failed to load profile. You can still create your profile below.',
     },
   },
@@ -1158,17 +1150,6 @@ const resources = {
       'guardian.detail.badges.repeatBookings': 'दोहराई गई बुकिंग',
       'guardian.detail.notFound': 'गार्जियन नहीं मिला',
       'guardian.detail.verificationTrustBadges': 'सत्यापन और विश्वास बैज',
-      
-      // Profile Pages (Hindi)
-      'profile.vital.createTitle': 'अपनी प्रोफ़ाइल बनाएं',
-      'profile.vital.editTitle': 'मेरी प्रोफ़ाइल',
-      'profile.vital.createDescription': 'अपने बारे में बताएं ताकि हम आपको सही गार्जियन्स से जोड़ सकें',
-      'profile.vital.editDescription': 'अपनी प्रोफ़ाइल जानकारी अपडेट करें ताकि हम आपको सही गार्जियन्स से जोड़ सकें',
-      'profile.vital.backToDashboard': 'डैशबोर्ड पर वापस जाएं',
-      'profile.guardian.createTitle': 'अपनी प्रोफ़ाइल बनाएं',
-      'profile.guardian.editTitle': 'प्रोफ़ाइल संपादित करें',
-      'profile.guardian.createDescription': 'बुकिंग प्राप्त करना शुरू करने के लिए अपने अनुभव और उपलब्धता के बारे में बताएं',
-      'profile.guardian.editDescription': 'अपनी प्रोफ़ाइल जानकारी अपडेट करें',
       
       // Dashboard Messages (Hindi)
       'dashboard.vital.createProfile': 'शुरू करने के लिए अपनी प्रोफ़ाइल बनाएं',
@@ -1606,10 +1587,7 @@ const resources = {
       'help.faq.account.a3': 'हम प्रमुख क्रेडिट कार्ड, डेबिट कार्ड और डिजिटल भुगतान विधियों को स्वीकार करते हैं। सभी भुगतान हमारे भुगतान भागीदारों के माध्यम से सुरक्षित रूप से संसाधित किए जाते हैं।',
       'help.faq.account.q4': 'मैं अपना खाता कैसे रद्द करूं?',
       'help.faq.account.a4': 'खाता रद्दीकरण का अनुरोध करने के लिए हमारी सहायता टीम से संपर्क करें। कृपया ध्यान दें कि आपको पहले किसी भी सक्रिय बुकिंग को पूरा करना पड़ सकता है।',
-      // Testimonials (Hindi)
-      'home.testimonials.priya.name': 'प्रिया एस.',
-      'home.testimonials.rajesh.name': 'राजेश के.',
-      'home.testimonials.anjali.name': 'अंजलि एम.',
+      // Testimonials badges (Hindi)
       'home.testimonials.badge.vital': 'वाइटल',
       'home.testimonials.badge.guardian': 'गार्जियन',
       
@@ -1622,11 +1600,6 @@ const resources = {
       'form.subject.placeholder': 'विषय दर्ज करें',
       'form.message': 'संदेश',
       'form.message.placeholder': 'अपना संदेश दर्ज करें',
-      'form.contactPreference': 'संपर्क वरीयता',
-      'form.contactPreference.phone': 'फोन',
-      'form.contactPreference.email': 'ईमेल',
-      'form.contactPreference.both': 'दोनों',
-      'form.specialization.placeholder': 'अपने विशेषज्ञता के क्षेत्र दर्ज करें, अल्पविराम से अलग',
       'form.failedToLoad': 'प्रोफ़ाइल लोड करने में विफल। आप अभी भी नीचे अपनी प्रोफ़ाइल बना सकते हैं।',
     },
   },

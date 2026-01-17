@@ -33,6 +33,26 @@
                    └─────────────┘
 ```
 
+## Directory Structure
+
+The `socket-server` directory is self-contained and includes all necessary files:
+
+```
+socket-server/
+├── index.js              # Main server file
+├── package.json          # Dependencies
+├── .env.example          # Environment variables template
+├── lib/
+│   └── db.js            # MongoDB connection (CommonJS)
+└── models/              # Mongoose models (CommonJS)
+    ├── Message.js
+    ├── Notification.js
+    ├── VitalProfile.js
+    └── GuardianProfile.js
+```
+
+**Important:** All files in `socket-server` are CommonJS (`.js`) to work with Node.js without TypeScript compilation.
+
 ## Environment Variables
 
 ### For Next.js (.env.local)

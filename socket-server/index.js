@@ -18,24 +18,12 @@ const { Server } = require('socket.io');
 const mongoose = require('mongoose');
 
 // Import database connection and models
-// Note: These use relative paths from socket-server directory
-let connectDB, Message, Notification, VitalProfile, GuardianProfile;
-
-try {
-  // Try ES module style (default export)
-  connectDB = require('../lib/db').default || require('../lib/db');
-  Message = require('../models/Message').default || require('../models/Message');
-  Notification = require('../models/Notification').default || require('../models/Notification');
-  VitalProfile = require('../models/VitalProfile').default || require('../models/VitalProfile');
-  GuardianProfile = require('../models/GuardianProfile').default || require('../models/GuardianProfile');
-} catch (error) {
-  // Fallback to CommonJS style
-  connectDB = require('../lib/db');
-  Message = require('../models/Message');
-  Notification = require('../models/Notification');
-  VitalProfile = require('../models/VitalProfile');
-  GuardianProfile = require('../models/GuardianProfile');
-}
+// These are self-contained CommonJS modules in the socket-server directory
+const connectDB = require('./lib/db');
+const Message = require('./models/Message');
+const Notification = require('./models/Notification');
+const VitalProfile = require('./models/VitalProfile');
+const GuardianProfile = require('./models/GuardianProfile');
 
 const app = express();
 const httpServer = http.createServer(app);

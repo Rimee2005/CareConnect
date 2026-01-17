@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: careconnect-socket-server
+    env: node
+    buildCommand: cd socket-server && npm install
+    startCommand: cd socket-server && node index.js
+    envVars:
+      - key: MONGODB_URI
+        sync: false
+      - key: PORT
+        value: 4000
+      - key: NEXT_PUBLIC_URL
+        sync: false
+      - key: NEXTAUTH_URL
+        sync: false
+

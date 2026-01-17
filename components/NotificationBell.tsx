@@ -85,16 +85,18 @@ export function NotificationBell() {
 
       // Check if response is JSON before parsing
       const contentType = res.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        // Response is HTML (likely redirect) - user is not authenticated
-        if (res.status === 401 || res.status === 403) {
-          setNotifications([]);
-          setUnreadCount(0);
-          return;
-        }
-        throw new Error('Invalid response format');
+      const isJson = contentType && contentType.includes('application/json');
+
+      // If not JSON, it's likely HTML (redirect) - handle gracefully
+      if (!isJson) {
+        // Non-JSON response (likely HTML redirect) - user may not be authenticated
+        setNotifications([]);
+        setUnreadCount(0);
+        // Don't log error - this is expected when unauthenticated
+        return;
       }
 
+      // Response is JSON - parse it
       if (res.ok) {
         const data = await res.json();
         setNotifications(data);
@@ -103,15 +105,32 @@ export function NotificationBell() {
         // Unauthorized - clear notifications
         setNotifications([]);
         setUnreadCount(0);
+      } else {
+        // Other error status - try to parse error message
+        try {
+          const errorData = await res.json();
+          console.error('Failed to fetch notifications:', res.status, errorData);
+        } catch {
+          // If even error response isn't JSON, just clear notifications
+          setNotifications([]);
+          setUnreadCount(0);
+        }
       }
     } catch (error) {
-      // Only log if it's not a JSON parse error (which we handle above)
-      if (error instanceof SyntaxError && error.message.includes('JSON')) {
-        // HTML response received - likely unauthenticated
+      // Handle all errors gracefully - don't crash the component
+      if (error instanceof SyntaxError) {
+        // JSON parse error - likely HTML response
+        setNotifications([]);
+        setUnreadCount(0);
+      } else if (error instanceof TypeError && error.message.includes('fetch')) {
+        // Network error - silently fail
         setNotifications([]);
         setUnreadCount(0);
       } else {
+        // Other errors - log but don't crash
         console.error('Failed to fetch notifications:', error);
+        setNotifications([]);
+        setUnreadCount(0);
       }
     }
   };

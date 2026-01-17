@@ -17,17 +17,18 @@ import { VitalNavbar } from '@/components/VitalNavbar';
 import { useTranslation } from '@/lib/i18n';
 import { Upload, ArrowLeft, Loader2 } from 'lucide-react';
 
-const vitalProfileSchema = z.object({
-  name: z.string().min(1, 'Name is required'),
+// Create schema with translations
+const createVitalProfileSchema = (t: (key: string) => string) => z.object({
+  name: z.string().min(1, t('form.validation.nameRequired')),
   age: z.number().min(1).max(120),
   gender: z.enum(['Male', 'Female', 'Other', 'Prefer not to say']),
-  healthNeeds: z.string().min(10, 'Please provide at least 10 characters'),
+  healthNeeds: z.string().min(10, t('form.validation.healthNeedsMin')),
   healthTags: z.string().optional(),
-  city: z.string().min(1, 'City is required'),
+  city: z.string().min(1, t('form.validation.cityRequired')),
   contactPreference: z.enum(['Phone', 'Email', 'Both']),
 });
 
-type VitalProfileForm = z.infer<typeof vitalProfileSchema>;
+type VitalProfileForm = z.infer<ReturnType<typeof createVitalProfileSchema>>;
 
 interface VitalProfile {
   _id: string;
@@ -61,7 +62,7 @@ export default function VitalProfilePage() {
     formState: { errors },
     reset,
   } = useForm<VitalProfileForm>({
-    resolver: zodResolver(vitalProfileSchema),
+    resolver: zodResolver(createVitalProfileSchema(t)),
   });
 
   useEffect(() => {
@@ -120,15 +121,15 @@ export default function VitalProfilePage() {
         setPhotoFile(null);
       } else {
         // Other error
-        const errorData = await res.json().catch(() => ({ error: 'Failed to load profile' }));
-        setError(errorData.error || 'Failed to load profile');
+        const errorData = await res.json().catch(() => ({ error: t('form.validation.failedToLoad') }));
+        setError(errorData.error || t('form.validation.failedToLoad'));
         setIsCreateMode(true); // Allow create as fallback
         setPhotoPreview('');
         setPhotoFile(null);
       }
     } catch (error) {
       console.error('Failed to fetch profile:', error);
-      setError('Failed to load profile. You can still create your profile below.');
+      setError(t('form.validation.failedToLoadContinue'));
       setIsCreateMode(true); // Allow create as fallback
       // Reset form to empty state
       reset({
@@ -206,7 +207,7 @@ export default function VitalProfilePage() {
         try {
           // Validate file before upload
           if (photoFile.size === 0) {
-            throw new Error('Selected file is empty');
+            throw new Error(t('form.validation.selectedFileEmpty'));
           }
 
           const formData = new FormData();
@@ -226,27 +227,27 @@ export default function VitalProfilePage() {
             }
             
             // Check if it's a Cloudinary configuration error
-            const errorMsg = uploadError.error || 'Failed to upload photo';
+            const errorMsg = uploadError.error || t('form.validation.uploadFailed');
             if (errorMsg.includes('Cloudinary') || errorMsg.includes('api_key') || errorMsg.includes('not configured')) {
               // Make photo upload optional - allow profile save without photo
-              photoUploadWarning = `Photo upload skipped: ${errorMsg}. Profile will be saved without photo. You can configure Cloudinary later.`;
+              photoUploadWarning = t('form.validation.uploadSkipped').replace('{error}', errorMsg);
               console.warn('Photo upload failed, continuing without photo:', errorMsg);
               // Keep existing photo if in edit mode, otherwise leave empty
               profilePhoto = profile?.profilePhoto || '';
             } else {
               // For other errors, still allow save but warn user
-              photoUploadWarning = `Photo upload failed: ${errorMsg}. Profile will be saved without the new photo.`;
+              photoUploadWarning = t('form.validation.uploadFailedContinue').replace('{error}', errorMsg);
               console.warn('Photo upload failed, continuing without photo:', errorMsg);
               profilePhoto = profile?.profilePhoto || '';
             }
           } else {
             const uploadData = await uploadRes.json();
             if (!uploadData || !uploadData.url) {
-              photoUploadWarning = 'Photo upload completed but no URL returned. Profile will be saved without photo.';
+              photoUploadWarning = t('form.validation.uploadNoUrl');
               console.warn('Photo upload returned no URL');
               profilePhoto = profile?.profilePhoto || '';
             } else if (typeof uploadData.url !== 'string' || !uploadData.url.startsWith('http')) {
-              photoUploadWarning = 'Invalid photo URL returned. Profile will be saved without photo.';
+              photoUploadWarning = t('form.validation.invalidPhotoUrl');
               console.warn('Invalid photo URL:', uploadData.url);
               profilePhoto = profile?.profilePhoto || '';
             } else {
@@ -321,13 +322,13 @@ export default function VitalProfilePage() {
       if (!res.ok) {
         // If profile already exists error, switch to edit mode and refetch
         if (res.status === 400 && result.error?.includes('already exists')) {
-          setError('Profile already exists. Switching to edit mode...');
+          setError(t('form.validation.profileAlreadyExists'));
           setIsCreateMode(false);
           // Refetch the profile
           await fetchProfile();
           return;
         }
-        setError(result.error || `Failed to ${isCreateMode ? 'create' : 'update'} profile`);
+        setError(result.error || (isCreateMode ? t('form.validation.failedToCreate') : t('form.validation.failedToUpdate')));
         return;
       }
 
@@ -365,7 +366,7 @@ export default function VitalProfilePage() {
       router.push('/vital/dashboard');
     } catch (err: any) {
       console.error('Profile save error:', err);
-      setError(err.message || 'An error occurred. Please try again.');
+      setError(err.message || t('form.validation.anErrorOccurred'));
     } finally {
       setSaving(false);
     }
@@ -380,7 +381,7 @@ export default function VitalProfilePage() {
           <div className="flex flex-col items-center justify-center gap-4">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
             <p className="text-sm text-text-muted dark:text-text-dark-muted">
-              {status === 'loading' ? 'Checking authentication...' : 'Loading profile...'}
+              {status === 'loading' ? t('form.validation.checkingAuth') : t('form.validation.loadingProfile')}
             </p>
           </div>
         </div>
@@ -402,7 +403,7 @@ export default function VitalProfilePage() {
           <Link href="/vital/dashboard">
             <Button variant="ghost" className="mb-6 text-sm sm:text-base">
               <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Dashboard
+              {t('profile.vital.backToDashboard')}
             </Button>
           </Link>
         )}
@@ -410,12 +411,12 @@ export default function VitalProfilePage() {
         <Card className="mx-auto max-w-2xl">
           <CardHeader>
             <CardTitle className="text-text dark:text-text-dark transition-colors">
-              {isCreateMode ? 'Create Your Profile' : 'My Profile'}
+              {isCreateMode ? t('profile.vital.createTitle') : t('profile.vital.editTitle')}
             </CardTitle>
             <CardDescription className="text-text-light dark:text-text-dark-light transition-colors">
               {isCreateMode 
-                ? 'Tell us about yourself so we can connect you with the right Guardians'
-                : 'Update your profile information to help us connect you with the right Guardians'}
+                ? t('profile.vital.createDescription')
+                : t('profile.vital.editDescription')}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -427,14 +428,14 @@ export default function VitalProfilePage() {
             {saving && photoFile && (
               <div className="mb-4 rounded-md border border-primary/20 bg-primary/5 p-3">
                 <p className="text-sm text-primary dark:text-primary-dark-mode">
-                  Uploading photo...
+                  {t('form.uploadingPhoto')}
                 </p>
               </div>
             )}
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="photo">Profile Photo</Label>
+                <Label htmlFor="photo">{t('form.profilePhoto')}</Label>
                 <div className="flex items-center gap-4">
                   {photoPreview ? (
                     <div className="relative">
@@ -460,7 +461,7 @@ export default function VitalProfilePage() {
                     className="flex cursor-pointer items-center gap-2 rounded-md border border-gray-300 px-4 py-2 text-text hover:bg-background-secondary dark:border-border-dark dark:text-text-dark dark:hover:bg-background-dark-secondary transition-colors"
                   >
                     <Upload className="h-4 w-4 text-text dark:text-text-dark transition-colors" />
-                    <span>{photoPreview ? 'Change Photo' : 'Upload Photo'}</span>
+                    <span>{photoPreview ? t('form.changePhoto') : t('form.uploadPhoto')}</span>
                     <input
                       id="photo"
                       type="file"
@@ -472,20 +473,20 @@ export default function VitalProfilePage() {
                 </div>
                 {photoPreview && (
                   <p className="text-xs text-text-muted dark:text-text-dark-muted">
-                    Photo ready to save
+                    {t('form.photoReady')}
                   </p>
                 )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="name">Name *</Label>
+                <Label htmlFor="name">{t('form.name')} *</Label>
                 <Input id="name" {...register('name')} />
                 {errors.name && <p className="text-sm font-medium text-error dark:text-error transition-colors">{errors.name.message}</p>}
               </div>
 
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="age">Age *</Label>
+                  <Label htmlFor="age">{t('form.age')} *</Label>
                   <Input
                     id="age"
                     type="number"
@@ -495,25 +496,25 @@ export default function VitalProfilePage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="gender">Gender *</Label>
+                  <Label htmlFor="gender">{t('form.gender')} *</Label>
                   <Select id="gender" {...register('gender')}>
-                    <option value="">Select</option>
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                    <option value="Other">Other</option>
-                    <option value="Prefer not to say">Prefer not to say</option>
+                    <option value="">{t('form.select')}</option>
+                    <option value="Male">{t('guardians.male')}</option>
+                    <option value="Female">{t('guardians.female')}</option>
+                    <option value="Other">{t('guardians.other')}</option>
+                    <option value="Prefer not to say">{t('guardians.preferNotToSay')}</option>
                   </Select>
                   {errors.gender && <p className="text-sm font-medium text-error dark:text-error transition-colors">{errors.gender.message}</p>}
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="healthNeeds">Health Needs *</Label>
+                <Label htmlFor="healthNeeds">{t('form.healthNeeds')} *</Label>
                 <Textarea
                   id="healthNeeds"
                   {...register('healthNeeds')}
                   rows={4}
-                  placeholder="Describe your health needs and requirements..."
+                  placeholder={t('form.healthNeeds.placeholder')}
                 />
                 {errors.healthNeeds && (
                   <p className="text-sm font-medium text-error dark:text-error transition-colors">{errors.healthNeeds.message}</p>
@@ -521,28 +522,28 @@ export default function VitalProfilePage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="healthTags">Health Tags (comma-separated)</Label>
+                <Label htmlFor="healthTags">{t('form.healthTags')} ({t('form.healthTags.help')})</Label>
                 <Input
                   id="healthTags"
                   {...register('healthTags')}
-                  placeholder="e.g., diabetes, mobility assistance, medication management"
+                  placeholder={t('form.healthTags.placeholder')}
                 />
               </div>
 
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="city">City *</Label>
+                  <Label htmlFor="city">{t('form.city')} *</Label>
                   <Input id="city" {...register('city')} />
                   {errors.city && <p className="text-sm font-medium text-error dark:text-error transition-colors">{errors.city.message}</p>}
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="contactPreference">Contact Preference *</Label>
+                  <Label htmlFor="contactPreference">{t('form.contactPreference')} *</Label>
                   <Select id="contactPreference" {...register('contactPreference')}>
-                    <option value="">Select</option>
-                    <option value="Phone">Phone</option>
-                    <option value="Email">Email</option>
-                    <option value="Both">Both</option>
+                    <option value="">{t('form.select')}</option>
+                    <option value="Phone">{t('form.contactPreference.phone')}</option>
+                    <option value="Email">{t('form.contactPreference.email')}</option>
+                    <option value="Both">{t('form.contactPreference.both')}</option>
                   </Select>
                   {errors.contactPreference && (
                     <p className="text-sm font-medium text-error dark:text-error transition-colors">{errors.contactPreference.message}</p>
@@ -555,16 +556,16 @@ export default function VitalProfilePage() {
                   {saving ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      {isCreateMode ? 'Creating...' : 'Saving...'}
+                      {isCreateMode ? t('form.creating') : t('form.saving')}
                     </>
                   ) : (
-                    isCreateMode ? 'Create Profile' : 'Save Changes'
+                    isCreateMode ? t('form.create') : t('form.save')
                   )}
                 </Button>
                 {!isCreateMode && (
                   <Link href="/vital/dashboard" className="flex-1">
                     <Button type="button" variant="outline" className="w-full">
-                      Cancel
+                      {t('form.cancel')}
                     </Button>
                   </Link>
                 )}

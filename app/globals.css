@@ -12,10 +12,10 @@
   }
 
   .dark {
-    --background: 26 31 46;
-    --foreground: 232 237 243;
-    --border: 45 55 72;
-    --input: 45 55 72;
+    --background: 30 35 41;
+    --foreground: 241 243 245;
+    --border: 58 65 73;
+    --input: 58 65 73;
     --ring: 45 221 191;
   }
 
@@ -52,7 +52,7 @@
 }
 
 .dark .leaflet-container {
-  background-color: rgb(26, 31, 46) !important;
+  background-color: rgb(30, 35, 41) !important;
 }
 
 /* Ensure Leaflet map tiles are visible */
@@ -74,8 +74,8 @@
 }
 
 .dark .leaflet-popup-content-wrapper {
-  background-color: rgb(45, 55, 72);
-  color: rgb(232, 237, 243);
+  background-color: rgb(42, 47, 54);
+  color: rgb(241, 243, 245);
 }
 
 .leaflet-popup-tip {
@@ -83,7 +83,7 @@
 }
 
 .dark .leaflet-popup-tip {
-  background-color: rgb(45, 55, 72);
+  background-color: rgb(42, 47, 54);
 }
 
 .leaflet-control-zoom a {
@@ -93,7 +93,7 @@
 }
 
 .dark .leaflet-control-zoom a {
-  background-color: rgb(45, 55, 72);
+  background-color: rgb(42, 47, 54);
   color: rgb(232, 237, 243);
   border: 1px solid rgb(45, 55, 72);
 }

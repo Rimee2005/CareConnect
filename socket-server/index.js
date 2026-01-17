@@ -28,6 +28,11 @@ const GuardianProfile = require('./models/GuardianProfile');
 const app = express();
 const httpServer = http.createServer(app);
 
+// Set server timeouts to prevent hanging connections
+httpServer.timeout = 10000; // 10 second timeout
+httpServer.keepAliveTimeout = 65000; // 65 seconds
+httpServer.headersTimeout = 66000; // 66 seconds
+
 // CORS configuration
 // IMPORTANT: Update this with your production frontend URL
 const allowedOrigins = [
@@ -80,6 +85,56 @@ app.get('/', (req, res) => {
   });
 });
 
+// Middleware to parse JSON
+app.use(express.json());
+
+// Endpoint for API routes to trigger socket emissions
+app.post('/api/emit-message', async (req, res) => {
+  // Set response timeout
+  req.setTimeout(2000, () => {
+    if (!res.headersSent) {
+      res.status(200).json({ success: true, timeout: true });
+    }
+  });
+
+  try {
+    const { chatId, messageData, recipientUserId, notification } = req.body;
+    
+    if (!chatId || !messageData) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    const roomName = `chat-${chatId}`;
+    
+    // Emit to all clients in the room (non-blocking)
+    io.to(roomName).emit('receive-message', messageData);
+    
+    // If recipientUserId is provided, emit notification (non-blocking)
+    if (recipientUserId && notification) {
+      const recipientUserIdStr = recipientUserId.toString();
+      const userSockets = Array.from(io.sockets.sockets.values()).filter(
+        (s) => s.data?.userId === recipientUserIdStr
+      );
+      
+      userSockets.forEach((userSocket) => {
+        userSocket.emit('new-notification', notification);
+      });
+    }
+    
+    // Respond immediately without waiting
+    res.status(200).json({ 
+      success: true, 
+      roomName, 
+      clientsNotified: io.sockets.adapter.rooms.get(roomName)?.size || 0 
+    });
+  } catch (error) {
+    console.error('Error in /api/emit-message:', error);
+    if (!res.headersSent) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+});
+
 // Connect to MongoDB
 connectDB()
   .then(() => {
@@ -95,21 +150,36 @@ io.on('connection', (socket) => {
   console.log('✅ Client connected:', socket.id);
   console.log('📍 Origin:', socket.handshake.headers.origin);
 
-  // Join room based on chat ID
-  socket.on('join-room', async (data) => {
+  // Store user ID on socket for notification targeting
+  socket.on('register-user', (data) => {
+    const { userId } = data;
+    if (userId) {
+      socket.data = { ...socket.data, userId: userId.toString() };
+      console.log(`👤 User ${userId} registered on socket ${socket.id}`);
+    }
+  });
+
+  // Join room based on chat ID (synchronous, no database calls)
+  socket.on('join-room', (data) => {
     try {
       const { userId, role, chatId } = data;
       
       if (!chatId) {
         console.warn('⚠️  join-room called without chatId');
+        socket.emit('room-error', { error: 'Missing chatId' });
         return;
+      }
+
+      // Store user ID on socket for notifications (synchronous)
+      if (userId) {
+        socket.data = { ...socket.data, userId: userId.toString() };
       }
 
       const roomName = `chat-${chatId}`;
       socket.join(roomName);
       console.log(`👤 User ${userId} (${role}) joined room: ${roomName}`);
       
-      // Emit confirmation
+      // Emit confirmation immediately (non-blocking)
       socket.emit('room-joined', { roomName, chatId });
     } catch (error) {
       console.error('❌ Error in join-room:', error);
@@ -128,35 +198,47 @@ io.on('connection', (socket) => {
         return;
       }
 
-      // Ensure database connection
-      await connectDB();
-
-      // Save message to database
-      const savedMessage = await Message.create({
-        vitalId,
-        guardianId,
-        senderId,
-        senderRole,
-        message,
-        read: false,
-      });
-
       const roomName = `chat-${chatId || `${vitalId}-${guardianId}`}`;
 
-      // Get sender name for the message
-      let senderName = '';
-      try {
-        if (senderRole === 'VITAL') {
-          const vital = await VitalProfile.findById(vitalId);
-          senderName = vital?.name || 'Vital';
-        } else {
-          const guardian = await GuardianProfile.findById(guardianId);
-          senderName = guardian?.name || 'Guardian';
-        }
-      } catch (error) {
-        console.error('Error fetching sender name:', error);
-        senderName = senderRole === 'VITAL' ? 'Vital' : 'Guardian';
-      }
+      // Create timeout promise for database operations
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Database operation timeout')), 5000);
+      });
+
+      // Parallel database operations with timeout
+      const dbOperations = Promise.race([
+        (async () => {
+          // Ensure database connection
+          await connectDB();
+
+          // Parallel fetch profiles and create message
+          const [savedMessage, vitalProfile, guardianProfile] = await Promise.all([
+            Message.create({
+              vitalId,
+              guardianId,
+              senderId,
+              senderRole,
+              message,
+              read: false,
+            }),
+            VitalProfile.findById(vitalId).lean().maxTimeMS(2000),
+            GuardianProfile.findById(guardianId).lean().maxTimeMS(2000),
+          ]);
+
+          // Get sender name
+          let senderName = '';
+          if (senderRole === 'VITAL') {
+            senderName = vitalProfile?.name || 'Vital';
+          } else {
+            senderName = guardianProfile?.name || 'Guardian';
+          }
+
+          return { savedMessage, senderName, vitalProfile, guardianProfile };
+        })(),
+        timeoutPromise,
+      ]);
+
+      const { savedMessage, senderName, vitalProfile, guardianProfile } = await dbOperations;
 
       const messageData = {
         _id: savedMessage._id.toString(),
@@ -176,35 +258,58 @@ io.on('connection', (socket) => {
       
       console.log(`📤 Broadcasting message to room ${roomName} (${clientsInRoom} clients)`);
 
-      // Emit to all clients in the room
+      // Emit to all clients in the room IMMEDIATELY (non-blocking)
       io.to(roomName).emit('receive-message', messageData);
 
       // Send confirmation back to sender
       socket.emit('message-sent', { messageId: savedMessage._id.toString() });
 
-      // Create notification for the recipient
-      try {
-        let recipientUserId;
-        if (senderRole === 'VITAL') {
-          const guardian = await GuardianProfile.findById(guardianId);
-          recipientUserId = guardian?.userId;
-        } else {
-          const vital = await VitalProfile.findById(vitalId);
-          recipientUserId = vital?.userId;
-        }
+      // Create notification for the recipient (non-blocking, don't wait)
+      (async () => {
+        try {
+          let recipientUserId;
+          if (senderRole === 'VITAL') {
+            recipientUserId = guardianProfile?.userId;
+          } else {
+            recipientUserId = vitalProfile?.userId;
+          }
 
-        if (recipientUserId) {
-          await Notification.create({
-            userId: recipientUserId,
-            type: 'MESSAGE',
-            message: `New message from ${senderRole === 'VITAL' ? 'Vital' : 'Guardian'}`,
-            relatedId: savedMessage._id,
-          });
+          if (recipientUserId) {
+            const notification = await Promise.race([
+              Notification.create({
+                userId: recipientUserId,
+                type: 'MESSAGE',
+                message: `You have a new message from ${senderName}`,
+                relatedId: savedMessage._id,
+              }),
+              new Promise((_, reject) => setTimeout(() => reject(new Error('Notification timeout')), 2000)),
+            ]);
+            
+            // Emit notification to the recipient in real-time
+            const recipientUserIdStr = recipientUserId.toString();
+            const userSockets = Array.from(io.sockets.sockets.values()).filter(
+              (s) => s.data?.userId === recipientUserIdStr
+            );
+            
+            console.log(`📢 Emitting notification to ${userSockets.length} socket(s) for user ${recipientUserIdStr}`);
+            
+            // Emit to all user's sockets
+            userSockets.forEach((userSocket) => {
+              userSocket.emit('new-notification', {
+                _id: notification._id.toString(),
+                type: notification.type,
+                message: notification.message,
+                read: notification.read,
+                relatedId: notification.relatedId?.toString(),
+                createdAt: notification.createdAt.toISOString(),
+              });
+            });
+          }
+        } catch (error) {
+          console.error('Error creating notification:', error);
+          // Don't fail the message send if notification fails
         }
-      } catch (error) {
-        console.error('Error creating notification:', error);
-        // Don't fail the message send if notification fails
-      }
+      })();
 
       console.log(`✅ Message broadcasted successfully`);
     } catch (error) {

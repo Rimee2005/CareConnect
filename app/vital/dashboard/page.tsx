@@ -114,25 +114,44 @@ export default function VitalDashboardPage() {
       const res = await fetch('/api/vital/profile', {
         cache: 'no-store',
         credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
       
-      if (res.ok) {
+      // Check if response is JSON before parsing
+      const contentType = res.headers.get('content-type');
+      const isJson = contentType && contentType.includes('application/json');
+      
+      if (res.ok && isJson) {
         const data = await res.json();
         setProfile(data);
       } else if (res.status === 404) {
         // Profile doesn't exist - user needs to create one
         setProfile(null);
+      } else if (res.status === 401 || res.status === 403) {
+        // Unauthorized - redirect to login
+        console.error('Unauthorized - redirecting to login');
+        router.push('/auth/login');
+        return;
       } else {
-        // Other error (401, 500, etc.)
-        console.error('Failed to fetch profile:', res.status, res.statusText);
-        const errorData = await res.json().catch(() => ({}));
-        console.error('Error details:', errorData);
-        // Still set profile to null so user can create one
+        // Other error (500, etc.)
+        if (isJson) {
+          const errorData = await res.json().catch(() => ({}));
+          console.error('Failed to fetch profile:', res.status, errorData);
+        } else {
+          console.error('Failed to fetch profile: Non-JSON response', res.status);
+        }
         setProfile(null);
       }
     } catch (error) {
+      // Handle JSON parse errors (HTML responses)
+      if (error instanceof SyntaxError && error.message.includes('JSON')) {
+        console.error('Received HTML instead of JSON - likely auth issue');
+        router.push('/auth/login');
+        return;
+      }
       console.error('Failed to fetch profile:', error);
-      // On network error, still allow user to proceed
       setProfile(null);
     } finally {
       setLoading(false);
@@ -144,15 +163,32 @@ export default function VitalDashboardPage() {
       const res = await fetch('/api/bookings', {
         cache: 'no-store',
         credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
-      if (res.ok) {
+      
+      const contentType = res.headers.get('content-type');
+      const isJson = contentType && contentType.includes('application/json');
+      
+      if (res.ok && isJson) {
         const data = await res.json();
         setBookings(data);
-      } else {
-        console.error('Failed to fetch bookings:', res.status, res.statusText);
+      } else if (res.status === 401 || res.status === 403) {
+        // Unauthorized - silently fail (don't redirect, let user see empty state)
+        setBookings([]);
+      } else if (isJson) {
+        const errorData = await res.json().catch(() => ({}));
+        console.error('Failed to fetch bookings:', res.status, errorData);
       }
     } catch (error) {
-      console.error('Failed to fetch bookings:', error);
+      // Handle JSON parse errors gracefully
+      if (error instanceof SyntaxError && error.message.includes('JSON')) {
+        // HTML response - likely auth issue, but don't redirect from here
+        setBookings([]);
+      } else {
+        console.error('Failed to fetch bookings:', error);
+      }
     }
   };
 
@@ -161,15 +197,31 @@ export default function VitalDashboardPage() {
       const res = await fetch('/api/guardians', {
         cache: 'no-store',
         credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
-      if (res.ok) {
+      
+      const contentType = res.headers.get('content-type');
+      const isJson = contentType && contentType.includes('application/json');
+      
+      if (res.ok && isJson) {
         const data = await res.json();
         setGuardians(data);
-      } else {
-        console.error('Failed to fetch guardians:', res.status, res.statusText);
+      } else if (res.status === 401 || res.status === 403) {
+        // Unauthorized - silently fail
+        setGuardians([]);
+      } else if (isJson) {
+        const errorData = await res.json().catch(() => ({}));
+        console.error('Failed to fetch guardians:', res.status, errorData);
       }
     } catch (error) {
-      console.error('Failed to fetch guardians:', error);
+      // Handle JSON parse errors gracefully
+      if (error instanceof SyntaxError && error.message.includes('JSON')) {
+        setGuardians([]);
+      } else {
+        console.error('Failed to fetch guardians:', error);
+      }
     }
   };
 

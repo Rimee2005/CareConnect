@@ -76,14 +76,43 @@ export function NotificationBell() {
 
   const fetchNotifications = async () => {
     try {
-      const res = await fetch('/api/notifications');
+      const res = await fetch('/api/notifications', {
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      // Check if response is JSON before parsing
+      const contentType = res.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        // Response is HTML (likely redirect) - user is not authenticated
+        if (res.status === 401 || res.status === 403) {
+          setNotifications([]);
+          setUnreadCount(0);
+          return;
+        }
+        throw new Error('Invalid response format');
+      }
+
       if (res.ok) {
         const data = await res.json();
         setNotifications(data);
         setUnreadCount(data.filter((n: Notification) => !n.read).length);
+      } else if (res.status === 401 || res.status === 403) {
+        // Unauthorized - clear notifications
+        setNotifications([]);
+        setUnreadCount(0);
       }
     } catch (error) {
-      console.error('Failed to fetch notifications:', error);
+      // Only log if it's not a JSON parse error (which we handle above)
+      if (error instanceof SyntaxError && error.message.includes('JSON')) {
+        // HTML response received - likely unauthenticated
+        setNotifications([]);
+        setUnreadCount(0);
+      } else {
+        console.error('Failed to fetch notifications:', error);
+      }
     }
   };
 

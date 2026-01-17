@@ -5,12 +5,42 @@ export default withAuth(
   function middleware(req) {
     const token = req.nextauth.token;
     const path = req.nextUrl.pathname;
+    const isApiRoute = path.startsWith('/api/');
 
     // Debug logging in development
     if (process.env.NODE_ENV === 'development') {
-      console.log('Middleware:', { path, hasToken: !!token, role: token?.role });
+      console.log('Middleware:', { path, hasToken: !!token, role: token?.role, isApiRoute });
     }
 
+    // For API routes, return JSON 401 instead of redirect
+    if (isApiRoute) {
+      if (!token) {
+        return NextResponse.json(
+          { error: 'Unauthorized' },
+          { status: 401 }
+        );
+      }
+
+      // Check role-based access for API routes
+      if (path.startsWith('/api/vital') && token.role !== 'VITAL') {
+        return NextResponse.json(
+          { error: 'Forbidden: VITAL role required' },
+          { status: 403 }
+        );
+      }
+
+      if (path.startsWith('/api/guardian') && token.role !== 'GUARDIAN') {
+        return NextResponse.json(
+          { error: 'Forbidden: GUARDIAN role required' },
+          { status: 403 }
+        );
+      }
+
+      // API route is authorized
+      return NextResponse.next();
+    }
+
+    // For page routes, handle redirects
     // Protect Vital routes
     if (path.startsWith('/vital')) {
       if (!token) {
@@ -59,6 +89,7 @@ export default withAuth(
         }
 
         // Protected routes require authentication
+        // Note: We handle API vs page route responses in the middleware function above
         return !!token;
       },
     },

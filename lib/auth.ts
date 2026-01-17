@@ -46,13 +46,16 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id;
         token.role = user.role;
+        token.email = user.email;
       }
+      // Ensure role persists across token refreshes
       return token;
     },
     async session({ session, token }) {
-      if (session.user) {
+      if (session.user && token) {
         session.user.id = token.id as string;
         session.user.role = token.role as 'VITAL' | 'GUARDIAN';
+        session.user.email = token.email as string;
       }
       return session;
     },
@@ -71,6 +74,8 @@ export const authOptions: NextAuthOptions = {
   },
   secret: process.env.NEXTAUTH_SECRET,
   debug: process.env.NODE_ENV === 'development',
+  useSecureCookies: process.env.NODE_ENV === 'production',
+  trustHost: true, // Required for Vercel deployments
   cookies: {
     sessionToken: {
       name: `${process.env.NODE_ENV === 'production' ? '__Secure-' : ''}next-auth.session-token`,
@@ -79,6 +84,7 @@ export const authOptions: NextAuthOptions = {
         sameSite: 'lax',
         path: '/',
         secure: process.env.NODE_ENV === 'production',
+        domain: process.env.NODE_ENV === 'production' ? undefined : undefined, // Let browser set domain
       },
     },
   },

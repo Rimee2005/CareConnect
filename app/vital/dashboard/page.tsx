@@ -81,21 +81,29 @@ export default function VitalDashboardPage() {
   const [selectedGuardian, setSelectedGuardian] = useState<Guardian | null>(null);
 
   useEffect(() => {
+    // Wait for session to finish loading
+    if (status === 'loading') {
+      return;
+    }
+
+    // Only redirect if we're definitely unauthenticated
     if (status === 'unauthenticated') {
       router.push('/auth/login');
       return;
     }
 
-    if (status === 'authenticated') {
-      if (session?.user?.role === 'VITAL') {
+    // If authenticated, check role and fetch data
+    if (status === 'authenticated' && session) {
+      if (session.user?.role === 'VITAL') {
         fetchProfile();
         fetchBookings();
         fetchGuardians();
-      } else if (session?.user?.role === 'GUARDIAN') {
+      } else if (session.user?.role === 'GUARDIAN') {
         // Wrong role - redirect to guardian dashboard
         router.push('/guardian/dashboard');
       } else {
         // No role or invalid role - redirect to home
+        console.warn('Session missing role:', session);
         router.push('/');
       }
     }

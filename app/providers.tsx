@@ -16,7 +16,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <SessionProvider>
+    <SessionProvider 
+      refetchInterval={0}
+      refetchOnWindowFocus={false}
+      basePath={process.env.NEXT_PUBLIC_BASE_PATH || undefined}
+    >
       <I18nextProvider i18n={i18n}>
         {children}
       </I18nextProvider>

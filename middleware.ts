@@ -13,6 +13,7 @@ const publicRoutes = [
   '/pricing',
   '/privacy',
   '/terms',
+  '/api/auth', // NextAuth routes must be public
 ];
 
 function isPublicRoute(path: string): boolean {

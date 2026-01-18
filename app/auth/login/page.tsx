@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, Suspense } from 'react';
-import { signIn } from 'next-auth/react';
+import { useState, Suspense, useEffect } from 'react';
+import { signIn, useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,12 +15,21 @@ import Link from 'next/link';
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { data: session, status } = useSession();
   const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Redirect authenticated users to their dashboard
+  useEffect(() => {
+    if (status === 'authenticated' && session?.user?.role) {
+      const dashboardUrl = `/${session.user.role.toLowerCase()}/dashboard`;
+      router.push(dashboardUrl);
+    }
+  }, [session, status, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,6 +77,27 @@ function LoginForm() {
       setLoading(false);
     }
   };
+
+  // Show loading while checking session
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen bg-background dark:bg-background-dark transition-colors">
+        <Navbar />
+        <div className="container mx-auto flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-8 sm:py-12">
+          <Card className="w-full max-w-md">
+            <CardContent className="px-4 sm:px-6 py-8">
+              <p className="text-center text-text-muted dark:text-text-dark-muted transition-colors">Loading...</p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't show login form if already authenticated (will redirect)
+  if (status === 'authenticated' && session?.user?.role) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-background dark:bg-background-dark transition-colors">

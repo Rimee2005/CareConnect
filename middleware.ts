@@ -7,6 +7,11 @@ export default withAuth(
     const path = req.nextUrl.pathname;
     const isApiRoute = path.startsWith('/api/');
 
+    // Early return for home page - don't process it at all
+    if (path === '/') {
+      return NextResponse.next();
+    }
+
     // Debug logging in development
     if (process.env.NODE_ENV === 'development') {
       console.log('Middleware:', { path, hasToken: !!token, role: token?.role, isApiRoute });
@@ -44,7 +49,9 @@ export default withAuth(
     // Protect Vital routes
     if (path.startsWith('/vital')) {
       if (!token) {
-        return NextResponse.redirect(new URL('/auth/login', req.url));
+        const loginUrl = new URL('/auth/login', req.url);
+        loginUrl.searchParams.set('callbackUrl', req.url);
+        return NextResponse.redirect(loginUrl);
       }
       if (token.role !== 'VITAL') {
         // If user has a different role, redirect to their dashboard
@@ -59,7 +66,9 @@ export default withAuth(
     // Protect Guardian routes
     if (path.startsWith('/guardian')) {
       if (!token) {
-        return NextResponse.redirect(new URL('/auth/login', req.url));
+        const loginUrl = new URL('/auth/login', req.url);
+        loginUrl.searchParams.set('callbackUrl', req.url);
+        return NextResponse.redirect(loginUrl);
       }
       if (token.role !== 'GUARDIAN') {
         // If user has a different role, redirect to their dashboard

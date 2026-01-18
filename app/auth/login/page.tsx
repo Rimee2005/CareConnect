@@ -55,7 +55,12 @@ function LoginForm() {
       
       // Check for callbackUrl first (if user was trying to access a protected route)
       const callbackUrl = searchParams.get('callbackUrl');
-      if (callbackUrl && (callbackUrl.includes('/vital') || callbackUrl.includes('/guardian'))) {
+      // Only use callbackUrl if it's a protected route (vital or guardian dashboard)
+      // Ignore callbackUrl if it's just the home page or other public routes
+      if (callbackUrl && 
+          callbackUrl !== '/' && 
+          !callbackUrl.includes('/auth') &&
+          (callbackUrl.includes('/vital') || callbackUrl.includes('/guardian'))) {
         window.location.href = callbackUrl;
         return;
       }

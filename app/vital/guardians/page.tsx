@@ -17,6 +17,8 @@ import { AIBadge } from '@/components/AIBadge';
 import { StarRating } from '@/components/StarRating';
 import { featureFlags } from '@/lib/feature-flags';
 import { calculateDistance, formatDistance } from '@/lib/utils';
+import BaseMap from '@/components/MapWrapper';
+import { useGeolocation } from '@/hooks/useGeolocation';
 
 interface Guardian {
   _id: string;
@@ -96,6 +98,9 @@ function GuardiansPageContent() {
   const [distanceRange, setDistanceRange] = useState<[number, number]>([0, 100]);
   const [sortBy, setSortBy] = useState<string>('rating');
   const [activeTab, setActiveTab] = useState<'all' | 'saved'>(searchParams.get('tab') === 'saved' ? 'saved' : 'all');
+  
+  // Geolocation for map
+  const { position: vitalPosition, loading: geoLoading } = useGeolocation();
 
   // Detect mobile
   useEffect(() => {
@@ -945,6 +950,60 @@ function GuardiansPageContent() {
           {t('guardians.showing')} {filteredAndSortedGuardians.length} {t('guardians.of')} {activeTab === 'saved' ? savedGuardians.length : guardians.length} {activeTab === 'saved' ? t('guardians.saved') : ''} {t('guardians.guardians')}
         </div>
 
+        {/* Map Section - Visual context only */}
+        {activeTab === 'all' && !loading && !geoLoading && vitalPosition && (
+          <Card className="mb-6 rounded-2xl border border-border dark:border-border-dark/50 shadow-md dark:bg-gradient-to-br dark:from-background-dark-secondary dark:to-background-dark-secondary/95 dark:shadow-[0_4px_16px_rgba(0,0,0,0.25)] transition-all duration-300">
+            <CardContent className="p-6">
+              <div className="mb-5 space-y-2">
+                <h2 className="text-xl font-bold text-text dark:text-text-dark">
+                  Nearby Care Guardians
+                </h2>
+                <p className="text-sm text-text-muted dark:text-text-dark-muted">
+                  See trusted guardians available around you
+                </p>
+              </div>
+              <div className="relative w-full rounded-xl overflow-hidden border border-border dark:border-border-dark/40" style={{ height: '380px' }}>
+                <BaseMap
+                  center={vitalPosition}
+                  zoom={12}
+                  markers={[
+                    // Vital marker ("You are here")
+                    {
+                      position: vitalPosition,
+                      label: '📍',
+                      color: 'user',
+                    },
+                    // Guardian markers - use coordinates if available, otherwise place consistently around center
+                    ...filteredAndSortedGuardians.slice(0, 20).map((guardian, index) => {
+                      let guardianPos: [number, number];
+                      if (guardian.location?.coordinates?.lat && guardian.location?.coordinates?.lng) {
+                        // Use actual coordinates
+                        guardianPos = [guardian.location.coordinates.lat, guardian.location.coordinates.lng];
+                      } else {
+                        // Place consistently around center (visual clustering)
+                        const angle = (index * 137.5) % 360; // Golden angle for even distribution
+                        const distance = 0.02 + (index % 3) * 0.01; // Small radius around center
+                        const latOffset = distance * Math.cos(angle * Math.PI / 180);
+                        const lngOffset = distance * Math.sin(angle * Math.PI / 180);
+                        guardianPos = [
+                          vitalPosition[0] + latOffset,
+                          vitalPosition[1] + lngOffset,
+                        ];
+                      }
+                      return {
+                        position: guardianPos,
+                      };
+                    }),
+                  ]}
+                  height="380px"
+                />
+              </div>
+              <p className="mt-4 text-xs text-text-muted dark:text-text-dark-muted italic">
+                Locations are approximate. Exact details are shared after booking.
+              </p>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Guardian Cards - Always visible when browsing */}
         {!loading && (filteredAndSortedGuardians.length > 0 ? (

@@ -13,6 +13,8 @@ import i18n from '@/lib/i18n';
 import { Plus, Calendar, User, Star, MapPin, Clock, CheckCircle, TrendingUp, Power, PowerOff, Edit, MessageSquare } from 'lucide-react';
 import { StarRating } from '@/components/StarRating';
 import { featureFlags } from '@/lib/feature-flags';
+import BaseMap from '@/components/MapWrapper';
+import { useGeolocation } from '@/hooks/useGeolocation';
 
 interface GuardianProfile {
   _id: string;
@@ -94,6 +96,9 @@ export default function GuardianDashboardPage() {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAvailable, setIsAvailable] = useState(true);
+  
+  // Geolocation for map
+  const { position: browserPosition, loading: geoLoading } = useGeolocation();
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -499,22 +504,54 @@ export default function GuardianDashboardPage() {
           </Card>
         </div>
 
-        {/* Location Info */}
-        {profile?.location?.coordinates && (
-          <Card className="mb-4 sm:mb-6 md:mb-8 dark:bg-gradient-to-br dark:from-background-dark-secondary dark:to-background-dark-secondary/95 dark:border-border-dark/40 dark:shadow-[0_4px_16px_rgba(0,0,0,0.25)] dark:hover:shadow-[0_6px_24px_rgba(0,0,0,0.3)] dark:hover:border-primary-dark-mode/30 transition-all duration-300">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 dark:text-text-dark">
-                <MapPin className="h-5 w-5 dark:text-primary-dark-mode" />
-                {t('dashboard.guardian.myLocation')}
-              </CardTitle>
-              <CardDescription className="dark:text-text-dark-muted">
-                {t('dashboard.guardian.serviceLocationDesc')}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-4 sm:p-6">
-                <p className="text-sm text-text-muted dark:text-text-dark-muted transition-colors">
-                  {t('dashboard.guardian.serviceRadius')}: {profile.serviceRadius || 10} {t('dashboard.guardian.kmFrom')} {profile.location?.city || t('dashboard.guardian.yourLocation')}
+        {/* Map Section - Always visible for visual context */}
+        {!geoLoading && browserPosition && (
+          <Card className="mb-4 sm:mb-6 md:mb-8 rounded-2xl border border-border dark:border-border-dark/50 shadow-md dark:bg-gradient-to-br dark:from-background-dark-secondary dark:to-background-dark-secondary/95 dark:shadow-[0_4px_16px_rgba(0,0,0,0.25)] transition-all duration-300">
+            <CardContent className="p-6">
+              <div className="mb-5 space-y-2">
+                <h2 className="text-xl font-bold text-text dark:text-text-dark">
+                  Your Service Area
+                </h2>
+                <p className="text-sm text-text-muted dark:text-text-dark-muted">
+                  This is how vitals see your availability on the map
                 </p>
+              </div>
+              <div className="relative w-full rounded-xl overflow-hidden border border-border dark:border-border-dark/40 mb-4" style={{ height: '360px' }}>
+                <BaseMap
+                  center={browserPosition}
+                  zoom={13}
+                  markers={[
+                    {
+                      position: browserPosition,
+                      label: '📍',
+                      color: 'user',
+                    },
+                  ]}
+                  circle={
+                    profile?.serviceRadius
+                      ? {
+                          center: browserPosition,
+                          radius: profile.serviceRadius || 10,
+                          color: '#14b8a6',
+                          fillColor: '#14b8a6',
+                          fillOpacity: 0.15,
+                        }
+                      : undefined
+                  }
+                  height="360px"
+                />
+              </div>
+              {/* Service radius info */}
+              <div className="space-y-1">
+                <p className="text-sm text-text-muted dark:text-text-dark-muted transition-colors">
+                  Service Radius: {profile?.serviceRadius || 10} km from {profile?.location?.city || 'your location'}
+                </p>
+                {bookings.filter(b => b.status === 'ACCEPTED' || b.status === 'ONGOING').length > 0 && (
+                  <p className="text-xs text-text-muted dark:text-text-dark-muted italic">
+                    Active booking location shown (approximate)
+                  </p>
+                )}
+              </div>
             </CardContent>
           </Card>
         )}

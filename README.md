@@ -4,6 +4,8 @@
 
 A production-quality, full-stack healthcare caregiving SaaS platform connecting Vitals (Patients/Care Seekers) with Guardians (Caretakers/Care Providers).
 
+# Deply Link: https://care-connect-rho-eight.vercel.app/
+
 ## 🚀 Features
 
 - **Dual Role System**: Separate workflows for Vitals and Guardians with strict RBAC
@@ -17,6 +19,7 @@ A production-quality, full-stack healthcare caregiving SaaS platform connecting 
 - **Feature Flags**: Future-ready feature flag system (SOS Emergency, AI Matching)
 - **Accessibility**: ARIA labels, keyboard navigation, screen reader support
 - **Modern UI**: Teal/Sage color scheme (NO BLUE), empathetic design, Framer Motion animations
+- **Chat System**: Chat feature available for vital and guardians
 
 ## 🛠️ Tech Stack
 

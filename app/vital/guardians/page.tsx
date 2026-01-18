@@ -950,238 +950,236 @@ function GuardiansPageContent() {
           {t('guardians.showing')} {filteredAndSortedGuardians.length} {t('guardians.of')} {activeTab === 'saved' ? savedGuardians.length : guardians.length} {activeTab === 'saved' ? t('guardians.saved') : ''} {t('guardians.guardians')}
         </div>
 
-        {/* Map Section - Visual context only */}
-        {activeTab === 'all' && !loading && !geoLoading && vitalPosition && (
-          <Card className="mb-6 rounded-2xl border border-border dark:border-border-dark/50 shadow-md dark:bg-gradient-to-br dark:from-background-dark-secondary dark:to-background-dark-secondary/95 dark:shadow-[0_4px_16px_rgba(0,0,0,0.25)] transition-all duration-300">
-            <CardContent className="p-6">
-              <div className="mb-5 space-y-2">
-                <h2 className="text-xl font-bold text-text dark:text-text-dark">
-                  Nearby Care Guardians
-                </h2>
-                <p className="text-sm text-text-muted dark:text-text-dark-muted">
-                  See trusted guardians available around you
-                </p>
-              </div>
-              <div className="relative w-full rounded-xl overflow-hidden border border-border dark:border-border-dark/40" style={{ height: '380px' }}>
-                <BaseMap
-                  center={vitalPosition}
-                  zoom={12}
-                  markers={[
-                    // Vital marker ("You are here")
-                    {
-                      position: vitalPosition,
-                      label: '📍',
-                      color: 'user',
-                    },
-                    // Guardian markers - use coordinates if available, otherwise place consistently around center
-                    ...filteredAndSortedGuardians.slice(0, 20).map((guardian, index) => {
-                      let guardianPos: [number, number];
-                      if (guardian.location?.coordinates?.lat && guardian.location?.coordinates?.lng) {
-                        // Use actual coordinates
-                        guardianPos = [guardian.location.coordinates.lat, guardian.location.coordinates.lng];
-                      } else {
-                        // Place consistently around center (visual clustering)
-                        const angle = (index * 137.5) % 360; // Golden angle for even distribution
-                        const distance = 0.02 + (index % 3) * 0.01; // Small radius around center
-                        const latOffset = distance * Math.cos(angle * Math.PI / 180);
-                        const lngOffset = distance * Math.sin(angle * Math.PI / 180);
-                        guardianPos = [
-                          vitalPosition[0] + latOffset,
-                          vitalPosition[1] + lngOffset,
-                        ];
-                      }
-                      return {
-                        position: guardianPos,
-                      };
-                    }),
-                  ]}
-                  height="380px"
-                />
-              </div>
-              <p className="mt-4 text-xs text-text-muted dark:text-text-dark-muted italic">
-                Locations are approximate. Exact details are shared after booking.
-              </p>
-            </CardContent>
-          </Card>
-        )}
+       
 
         {/* Guardian Cards - Always visible when browsing */}
-        {!loading && (filteredAndSortedGuardians.length > 0 ? (
-          <div className="grid gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {filteredAndSortedGuardians.map((guardian) => {
-              const availabilityStatus = getThisWeekAvailability(guardian);
-              const isSaved = savedGuardianIds.has(guardian._id);
-              const hasPastBooking = isPastGuardian(guardian._id);
-              
-              return (
-                <Card key={guardian._id} className="group relative overflow-hidden border-2 border-border/50 dark:border-border-dark/50 hover:border-primary/30 dark:hover:border-primary-dark-mode/40 hover:shadow-lg dark:hover:shadow-[0_6px_24px_rgba(0,0,0,0.4)] transition-all duration-300 bg-background dark:bg-background-dark-secondary dark:shadow-[0_4px_12px_rgba(0,0,0,0.25)]">
-                  <CardContent className="p-0">
-                    <div className="relative">
-                      {/* This Week Availability Strip */}
-                      <div className={`h-1.5 w-full ${
-                        availabilityStatus === 'high' ? 'bg-success' :
-                        availabilityStatus === 'medium' ? 'bg-warning' :
-                        'bg-error'
-                      }`} />
-                      
-                      {/* Profile Photo with Gradient Overlay */}
-                      <div className="relative h-56 w-full overflow-hidden bg-gradient-to-br from-primary/20 via-sage/10 to-secondary/5 dark:from-primary-dark-mode/20 dark:via-sage-dark-mode/10 dark:to-secondary-dark-mode/5">
-                        {guardian.profilePhoto ? (
-                          <img
-                            src={guardian.profilePhoto}
-                            alt={guardian.name}
-                            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                          />
-                        ) : (
-                          <div className="flex h-full items-center justify-center dark:bg-background-dark-secondary/60">
-                            <span className="text-5xl font-bold text-primary dark:text-primary-dark-mode transition-colors">
-                              {guardian.name.charAt(0).toUpperCase()}
-                            </span>
-                          </div>
-                        )}
-                        {/* Gradient Overlay */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent dark:from-background-dark/60" />
-                        
-                        {/* Top Right Badges */}
-                        <div className="absolute right-3 top-3 flex flex-col gap-2 items-end z-10">
-                          {guardian.aiMatch?.isRecommended && (
-                            <AIBadge
-                              explanation={guardian.aiMatch.explanation}
-                              reasons={guardian.aiMatch.reasons}
-                              score={guardian.aiMatch.score}
-                            />
-                          )}
-                          {guardian.isVerified && (
-                            <Badge
-                              variant="success"
-                              className="flex items-center gap-1.5 px-2.5 py-1 shadow-md backdrop-blur-sm bg-success/90 dark:bg-emerald-500 dark:text-emerald-950 border-0 dark:shadow-[0_2px_8px_rgba(16,185,129,0.3)] font-medium"
-                            >
-                              <Shield className="h-3.5 w-3.5" />
-                              <span className="text-xs font-semibold">{t('guardians.verified')}</span>
-                            </Badge>
-                          )}
-                        </div>
-                        
-                        {/* Save Button */}
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="absolute left-3 top-3 z-10 h-9 w-9 rounded-full bg-background/95 dark:bg-background-dark-secondary/95 hover:bg-background dark:hover:bg-background-dark-secondary shadow-lg dark:shadow-[0_4px_12px_rgba(0,0,0,0.3)] backdrop-blur-sm border border-border/50 dark:border-border-dark/50 transition-all hover:scale-110"
-                          onClick={() => toggleSaveGuardian(guardian._id)}
-                          aria-label={isSaved ? t('guardians.unsave') : t('guardians.save')}
-                        >
-                          <Heart
-                            className={`h-4 w-4 transition-all ${
-                              isSaved
-                                ? 'fill-secondary text-secondary dark:fill-secondary-dark-mode dark:text-secondary-dark-mode scale-110'
-                                : 'text-text-muted dark:text-text-dark-muted'
-                            }`}
-                          />
-                        </Button>
-                      </div>
+{!loading && (filteredAndSortedGuardians.length > 0 ? (
+  <>
+    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      {filteredAndSortedGuardians.map((guardian) => {
+        const availabilityStatus = getThisWeekAvailability(guardian);
+        const isSaved = savedGuardianIds.has(guardian._id);
+        const hasPastBooking = isPastGuardian(guardian._id);
+
+        return (
+          <Card
+            key={guardian._id}
+            className="
+              group relative overflow-hidden
+              rounded-2xl
+              border border-border/60
+              hover:border-emerald-400/60
+              bg-background dark:bg-background-dark-secondary
+              shadow-sm hover:shadow-xl
+              transition-all duration-300
+            "
+          >
+            <CardContent className="p-0">
+              <div className="relative">
+                {/* This Week Availability Strip */}
+                <div
+                  className={`h-1 w-full ${
+                    availabilityStatus === 'high'
+                      ? 'bg-emerald-500'
+                      : availabilityStatus === 'medium'
+                      ? 'bg-amber-400'
+                      : 'bg-rose-400'
+                  }`}
+                />
+
+                {/* Profile Photo with Gradient Overlay */}
+                <div className="relative h-56 w-full overflow-hidden bg-gradient-to-br from-emerald-50 via-white to-emerald-100 dark:from-emerald-900/30 dark:to-background-dark-secondary">
+                  {guardian.profilePhoto ? (
+                    <img
+                      src={guardian.profilePhoto}
+                      alt={guardian.name}
+                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    />
+                  ) : (
+                    <div className="flex h-full items-center justify-center">
+                      <span className="text-5xl font-semibold text-emerald-600 dark:text-emerald-400">
+                        {guardian.name.charAt(0).toUpperCase()}
+                      </span>
                     </div>
-                      
-                    {/* Card Content - Simplified for Discovery View */}
-                    <div className="p-4 sm:p-5">
-                      {/* Name and Rating Row */}
-                      <div className="mb-2.5 flex items-start justify-between gap-2">
-                        <div className="flex-1 min-w-0">
-                          <h3 className="mb-1 text-lg font-bold text-text dark:text-text-dark sm:text-xl transition-colors line-clamp-1">
-                            {guardian.name}
-                          </h3>
-                          {guardian.averageRating ? (
-                            <div className="flex items-center gap-1.5">
-                              <StarRating
-                                rating={guardian.averageRating}
-                                readonly
-                                size="sm"
-                              />
-                              <span className="text-sm font-semibold text-text dark:text-text-dark transition-colors">
-                                {guardian.averageRating.toFixed(1)}
-                              </span>
-                              <span className="text-xs text-text-muted dark:text-text-dark-muted transition-colors">
-                                ({guardian.reviewCount || 0})
-                              </span>
-                            </div>
-                          ) : (
-                            <Badge variant="outline" className="mt-1 text-xs dark:border-border-dark/50 dark:text-text-dark-muted">
-                              {t('guardians.new')}
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                      
-                      {/* Top 2-3 Care Tags Only */}
-                      {featureFlags.ADVANCED_GUARDIAN_PROFILE && guardian.careTags && guardian.careTags.length > 0 && (
-                        <div className="mb-2.5 flex flex-wrap gap-1.5">
-                          {guardian.careTags.slice(0, 3).map((tag, idx) => (
-                            <Badge 
-                              key={idx} 
-                              variant="default" 
-                              className="text-xs font-medium bg-primary/15 text-primary border border-primary/30 dark:bg-primary-dark-mode/15 dark:text-primary-dark-mode dark:border-primary-dark-mode/30 px-2 py-0.5"
-                            >
-                              {tag}
-                            </Badge>
-                          ))}
-                          {guardian.careTags.length > 3 && (
-                            <Badge variant="outline" className="text-xs px-2 py-0.5">
-                              +{guardian.careTags.length - 3}
-                            </Badge>
-                          )}
-                        </div>
-                      )}
-                      
-                      {/* Essential Info - Compact */}
-                      <div className="mb-2.5 space-y-1.5">
-                        {/* Starting Price */}
-                        {featureFlags.PRICING_SYSTEM && guardian.pricing && (
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-sm font-bold text-secondary dark:text-secondary-dark-mode transition-colors">
-                              {guardian.pricing.hourly ? (
-                                <>{t('guardians.from')} ₹{guardian.pricing.hourly}{t('guardians.perHour')}</>
-                              ) : guardian.pricing.daily ? (
-                                <>{t('guardians.from')} ₹{guardian.pricing.daily}{t('guardians.perDay')}</>
-                              ) : guardian.pricing.monthly ? (
-                                <>{t('guardians.from')} ₹{guardian.pricing.monthly}{t('guardians.perMonth')}</>
-                              ) : (
-                                <span className="text-xs text-text-muted dark:text-text-dark-muted">
-                                  {t('form.pricing.availableOnRequest')}
-                                </span>
-                              )}
-                            </span>
-                          </div>
-                        )}
-                        
-                        
-                        {/* Trusted by X families */}
-                        {guardian.reviewCount !== undefined && guardian.reviewCount > 0 && (
-                          <div className="flex items-center gap-1.5 text-xs text-text-muted dark:text-text-dark-muted">
-                            <span>{t('guardians.trustedBy')} {guardian.reviewCount} {guardian.reviewCount === 1 ? t('guardians.family') : t('guardians.families')}</span>
-                          </div>
-                        )}
-                      </div>
-                      
-                      {/* Primary CTA: Book Service */}
-                      <div className="flex flex-col gap-2">
-                        <Link href={`/vital/guardians/${guardian._id}`} className="block">
-                          <Button className="w-full font-semibold shadow-sm dark:shadow-[0_4px_12px_rgba(0,0,0,0.3)] hover:shadow-md dark:hover:shadow-[0_6px_20px_rgba(0,0,0,0.4)] hover:scale-[1.02] transition-all duration-200 group-hover:bg-primary group-hover:text-white dark:bg-primary-dark-mode dark:hover:bg-primary-dark-mode-hover" size="sm">
-                            {t('vital.book')}
-                          </Button>
-                        </Link>
-                        {hasPastBooking && (
-                          <Link href={`/vital/guardians/${guardian._id}`}>
-                            <Button variant="outline" size="sm" className="w-full whitespace-nowrap text-xs sm:text-sm dark:border-border-dark/50 dark:hover:bg-background-dark-secondary dark:hover:border-primary-dark-mode/40">
-                              {t('guardians.bookAgain')}
-                            </Button>
-                          </Link>
-                        )}
-                      </div>
+                  )}
+
+                  {/* Soft Overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-background/70 via-transparent to-transparent" />
+
+                  {/* Top Right Badges */}
+                  <div className="absolute right-3 top-3 flex flex-col gap-2 items-end z-10">
+                    {guardian.aiMatch?.isRecommended && (
+                      <AIBadge
+                        explanation={guardian.aiMatch.explanation}
+                        reasons={guardian.aiMatch.reasons}
+                        score={guardian.aiMatch.score}
+                      />
+                    )}
+                    {guardian.isVerified && (
+                      <Badge className="bg-emerald-500/90 text-white text-xs px-2 py-1 shadow-sm">
+                        <Shield className="h-3.5 w-3.5 mr-1" />
+                        {t('guardians.verified')}
+                      </Badge>
+                    )}
+                  </div>
+
+                  {/* Save Button */}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="
+                      absolute left-3 top-3 z-10
+                      h-9 w-9 rounded-full
+                      bg-white/90 dark:bg-background-dark-secondary/90
+                      shadow-md
+                      hover:scale-110 transition
+                    "
+                    onClick={() => toggleSaveGuardian(guardian._id)}
+                  >
+                    <Heart
+                      className={`h-4 w-4 ${
+                        isSaved
+                          ? 'fill-emerald-500 text-emerald-500'
+                          : 'text-muted-foreground'
+                      }`}
+                    />
+                  </Button>
+                </div>
+              </div>
+
+              {/* Card Content */}
+              <div className="p-5">
+                {/* Name & Rating */}
+                <div className="mb-3">
+                  <h3 className="text-lg font-semibold text-text dark:text-text-dark truncate">
+                    {guardian.name}
+                  </h3>
+
+                  {guardian.averageRating ? (
+                    <div className="flex items-center gap-1.5">
+                      <StarRating rating={guardian.averageRating} readonly size="sm" />
+                      <span className="text-sm font-medium">
+                        {guardian.averageRating.toFixed(1)}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        ({guardian.reviewCount || 0})
+                      </span>
                     </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
+                  ) : (
+                    <Badge variant="outline" className="text-xs mt-1">
+                      {t('guardians.new')}
+                    </Badge>
+                  )}
+                </div>
+
+              {/* Care Tags */}
+{featureFlags.ADVANCED_GUARDIAN_PROFILE &&
+  Array.isArray(guardian.careTags) &&
+  guardian.careTags.length > 0 && (
+    <div className="mb-3 flex flex-wrap gap-1.5">
+      {guardian.careTags.slice(0, 3).map((tag, idx) => (
+        <Badge
+          key={idx}
+          className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs"
+        >
+          {tag}
+        </Badge>
+      ))}
+    </div>
+)}
+
+
+
+                {/* Pricing */}
+                {featureFlags.PRICING_SYSTEM && guardian.pricing && (
+                  <p className="text-sm font-semibold text-emerald-600 mb-3">
+                    {guardian.pricing.hourly && `From ₹${guardian.pricing.hourly}/hr`}
+                  </p>
+                )}
+
+                {/* CTA */}
+                <div className="flex flex-col gap-2">
+                  <Link href={`/vital/guardians/${guardian._id}`}>
+                    <Button className="w-full bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl">
+                      {t('vital.book')}
+                    </Button>
+                  </Link>
+
+                  {hasPastBooking && (
+                    <Link href={`/vital/guardians/${guardian._id}`}>
+                      <Button variant="outline" size="sm" className="w-full">
+                        {t('guardians.bookAgain')}
+                      </Button>
+                    </Link>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })}
+    </div>
+ 
+
+
+  {/* Map Section - Visual only */}
+{activeTab === 'all' && !loading && !geoLoading && vitalPosition && (
+  <div className="mt-12">
+    <Card className="
+      rounded-2xl
+      border border-emerald-400/40
+      shadow-md
+      bg-white dark:bg-background-dark-secondary
+    ">
+      <CardContent className="p-3">
+        <p className="mb-2 text-sm font-medium text-emerald-700 dark:text-emerald-400">
+          Guardians near you
+        </p>
+
+        <div
+          className="relative w-full overflow-hidden rounded-xl border border-border/50"
+          style={{ height: '240px' }}
+        >
+          <BaseMap
+            center={vitalPosition}
+            zoom={12}
+            markers={[
+              // Vital marker
+              {
+                position: vitalPosition,
+              },
+              // Guardian markers
+              ...filteredAndSortedGuardians.slice(0, 15).map((guardian, index) => {
+                let guardianPos: [number, number];
+
+                if (
+                  guardian.location?.coordinates?.lat &&
+                  guardian.location?.coordinates?.lng
+                ) {
+                  guardianPos = [
+                    guardian.location.coordinates.lat,
+                    guardian.location.coordinates.lng,
+                  ];
+                } else {
+                  const angle = (index * 137.5) % 360;
+                  const distance = 0.015 + (index % 3) * 0.008;
+                  guardianPos = [
+                    vitalPosition[0] + distance * Math.cos((angle * Math.PI) / 180),
+                    vitalPosition[1] + distance * Math.sin((angle * Math.PI) / 180),
+                  ];
+                }
+
+                return { position: guardianPos };
+              }),
+            ]}
+            height="240px"
+          />
+        </div>
+      </CardContent>
+    </Card>
+  </div>
+)}
+</>
         ) : (
           /* Empty State */
           <Card className="border-2 border-dashed border-primary/30 dark:border-primary-dark-mode/40 bg-primary/5 dark:bg-primary-dark-mode/10 dark:bg-background-dark-secondary dark:shadow-[0_4px_12px_rgba(0,0,0,0.25)]">

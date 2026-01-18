@@ -49,14 +49,34 @@ export const authOptions: NextAuthOptions = {
         token.email = user.email;
       }
       // Ensure role persists across token refreshes
+      // If role is missing, it means the token was created before role was added
+      // In that case, we should still have it from the initial user object
+      if (!token.role && user) {
+        token.role = user.role;
+      }
       return token;
     },
     async session({ session, token }) {
       if (session.user && token) {
         session.user.id = token.id as string;
+        // Ensure role is set from token - if token doesn't have role, it's a problem
         session.user.role = token.role as 'VITAL' | 'GUARDIAN';
         session.user.email = token.email as string;
       }
+      
+      // Debug logging in development
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[Session Callback]', {
+          hasSession: !!session,
+          hasUser: !!session.user,
+          userId: session.user?.id,
+          userRole: session.user?.role,
+          tokenRole: token.role,
+          tokenId: token.id,
+          tokenKeys: Object.keys(token),
+        });
+      }
+      
       return session;
     },
     async redirect({ url, baseUrl }) {

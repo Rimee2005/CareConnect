@@ -128,13 +128,17 @@ function GuardiansPageContent() {
 
   const fetchGuardians = async () => {
     try {
-      const res = await fetch('/api/guardians');
+      const res = await fetch('/api/guardians', {
+        credentials: 'include',
+        cache: 'no-store',
+      });
       if (res.ok) {
         const data = await res.json();
         setGuardians(data || []);
         console.log('[Browse Guardians] Fetched guardians:', data?.length || 0);
       } else {
-        console.error('Failed to fetch guardians:', res.statusText);
+        const errorData = await res.json().catch(() => ({ error: res.statusText }));
+        console.error('Failed to fetch guardians:', res.status, res.statusText, errorData);
         setGuardians([]);
       }
     } catch (error) {

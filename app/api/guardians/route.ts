@@ -12,7 +12,7 @@ import Booking from '@/models/Booking';
 
 export async function GET(request: Request) {
   try {
-    const session = await requireVital();
+    const session = await requireVital(request);
     await connectDB();
 
     // Get Vital profile for AI matching input
@@ -79,10 +79,14 @@ export async function GET(request: Request) {
 
     return NextResponse.json(enrichedGuardians);
   } catch (error: any) {
-    if (error.message === 'Unauthorized' || error.message.includes('Forbidden')) {
+    console.error('[Guardians API] Error:', error.message, error);
+    if (error.message === 'Unauthorized') {
       return NextResponse.json({ error: error.message }, { status: 401 });
     }
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error.message.includes('Forbidden')) {
+      return NextResponse.json({ error: error.message }, { status: 403 });
+    }
+    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
   }
 }
 

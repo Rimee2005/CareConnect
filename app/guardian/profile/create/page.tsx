@@ -613,7 +613,7 @@ export default function CreateGuardianProfilePage() {
                           className={`group relative cursor-pointer px-4 py-2 text-sm font-medium transition-all duration-200 ${
                             isSelected
                               ? 'bg-primary text-white shadow-md hover:shadow-lg hover:scale-105 dark:bg-primary-dark-mode'
-                              : 'hover:bg-primary/10 hover:border-primary/50 dark:hover:bg-primary-dark-mode/10 dark:hover:border-primary-dark-mode/50'
+                              : 'border border-border dark:border-border-dark text-text dark:text-text-dark-muted hover:bg-primary/10 hover:border-primary/50 dark:hover:bg-primary-dark-mode/10 dark:hover:border-primary-dark-mode/50 dark:hover:text-text-dark'
                           }`}
                           onClick={() => toggleCareTag(tag)}
                           role="button"
@@ -664,7 +664,7 @@ export default function CreateGuardianProfilePage() {
                       {fields.map((field, index) => (
                         <div
                           key={field.id}
-                          className="flex items-center gap-2 rounded-lg border border-border/50 dark:border-border-dark/50 bg-background dark:bg-background-dark p-3 transition-colors"
+                          className="flex items-center gap-2 rounded-lg border border-border dark:border-border-dark bg-background dark:bg-background-dark p-3 transition-colors"
                         >
                           <div className="flex items-center gap-2 flex-1">
                             <Input
@@ -760,7 +760,7 @@ export default function CreateGuardianProfilePage() {
                           className={`group relative cursor-pointer px-4 py-2 text-sm font-medium transition-all duration-200 ${
                             isSelected
                               ? 'bg-primary text-white shadow-md hover:shadow-lg hover:scale-105 dark:bg-primary-dark-mode'
-                              : 'hover:bg-primary/10 hover:border-primary/50 dark:hover:bg-primary-dark-mode/10 dark:hover:border-primary-dark-mode/50'
+                              : 'border border-border dark:border-border-dark text-text dark:text-text-dark-muted hover:bg-primary/10 hover:border-primary/50 dark:hover:bg-primary-dark-mode/10 dark:hover:border-primary-dark-mode/50 dark:hover:text-text-dark'
                           }`}
                           onClick={() => toggleLanguage(lang)}
                           role="button"
@@ -822,7 +822,7 @@ export default function CreateGuardianProfilePage() {
                         className={`cursor-pointer px-3 py-1 text-xs font-medium transition-all ${
                           isSelected
                             ? 'bg-primary text-white dark:bg-primary-dark-mode'
-                            : 'hover:bg-primary/10 hover:border-primary/50 dark:hover:bg-primary-dark-mode/10'
+                            : 'border border-border dark:border-border-dark text-text dark:text-text-dark-muted hover:bg-primary/10 hover:border-primary/50 dark:hover:bg-primary-dark-mode/10 dark:hover:border-primary-dark-mode/50 dark:hover:text-text-dark'
                         }`}
                         onClick={() => {
                           const newDays = isSelected

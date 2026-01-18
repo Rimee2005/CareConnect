@@ -17,24 +17,18 @@ export function Navbar() {
   const { t } = useTranslation();
   const router = useRouter();
   const pathname = usePathname();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // 🔒 HYDRATION FIX (ONLY ADDITION)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+
+  useEffect(() => setMounted(true), []);
 
   useEffect(() => {
     setMobileMenuOpen(false);
-  }, [router]);
+  }, [pathname]);
 
   useEffect(() => {
-    if (mobileMenuOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
+    document.body.style.overflow = mobileMenuOpen ? 'hidden' : 'unset';
     return () => {
       document.body.style.overflow = 'unset';
     };
@@ -49,112 +43,166 @@ export function Navbar() {
 
   const isActive = (path: string) => pathname === path;
 
-  // 🔒 PREVENT SSR / CLIENT TEXT MISMATCH
   if (!mounted) {
     return (
-      <nav
-        className="sticky top-0 z-50 h-16 border-b border-border/60 bg-background/95 backdrop-blur-sm dark:bg-background-dark/95 dark:border-border-dark/60 shadow-sm"
-        role="navigation"
-        aria-label="Main navigation"
-      />
+      <nav className="sticky top-0 z-50 h-16 border-b border-border bg-background" />
     );
   }
 
   return (
-    <nav className="sticky top-0 z-50 border-b border-border/60 bg-background/95 backdrop-blur-sm dark:bg-background-dark/95 dark:border-border-dark/60 shadow-sm transition-all duration-200" role="navigation" aria-label="Main navigation">
-      <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
-        <Link 
-          href="/" 
-          className="flex items-center text-2xl font-bold tracking-tight text-primary transition-all duration-200 hover:text-primary/80 dark:text-primary-dark-mode dark:hover:text-primary-dark-mode/80 sm:text-3xl"
-          onClick={() => setMobileMenuOpen(false)}
-        >
-          CareConnect
-        </Link>
+    <>
+      {/* ================= NAVBAR ================= */}
+      <nav className="sticky top-0 z-50 border-b border-border bg-background dark:bg-background-dark">
+        <div className="container mx-auto flex h-16 items-center justify-between px-4">
 
-        <div className="hidden items-center gap-1 md:flex">
-          {!session && (
-            <nav className="flex items-center gap-1" aria-label="Main navigation links">
-              <Link 
-                href="/" 
-                className={cn(
-                  "relative rounded-lg px-4 py-2 text-sm font-medium transition-all duration-200",
-                  "text-text/70 hover:text-text hover:bg-background-secondary",
-                  "dark:text-text-dark/70 dark:hover:text-text-dark dark:hover:bg-background-dark-secondary",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-2",
-                  isActive('/') && "text-primary dark:text-primary-dark-mode bg-primary/5 dark:bg-primary-dark-mode/10"
-                )}
-              >
-                {t('nav.home')}
-                {isActive('/') && (
-                  <span className="absolute bottom-0 left-1/2 h-0.5 w-6 -translate-x-1/2 rounded-full bg-primary dark:bg-primary-dark-mode" />
-                )}
-              </Link>
+          {/* Logo */}
+          <Link
+            href="/"
+            className="text-2xl font-bold text-primary"
+            onClick={() => setMobileMenuOpen(false)}
+          >
+            CareConnect
+          </Link>
 
-              <Link 
-                href="/about" 
-                className={cn(
-                  "relative rounded-lg px-4 py-2 text-sm font-medium transition-all duration-200",
-                  "text-text/70 hover:text-text hover:bg-background-secondary",
-                  "dark:text-text-dark/70 dark:hover:text-text-dark dark:hover:bg-background-dark-secondary",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-2",
-                  isActive('/about') && "text-primary dark:text-primary-dark-mode bg-primary/5 dark:bg-primary-dark-mode/10"
-                )}
-              >
-                {t('nav.about')}
-                {isActive('/about') && (
-                  <span className="absolute bottom-0 left-1/2 h-0.5 w-6 -translate-x-1/2 rounded-full bg-primary dark:bg-primary-dark-mode" />
-                )}
-              </Link>
-            </nav>
-          )}
+          {/* ================= DESKTOP ================= */}
+          <div className="hidden md:flex items-center gap-2">
 
-          {!session && <div className="mx-2 h-6 w-px bg-border dark:bg-border-dark" />}
+            {!session && (
+              <>
+                <Link
+                  href="/"
+                  className={cn(
+                    'px-4 py-2 rounded-lg text-sm font-medium',
+                    isActive('/') && 'text-primary bg-primary/10'
+                  )}
+                >
+                  {t('nav.home')}
+                </Link>
 
-          {session ? (
-            <div className="flex items-center gap-1">
-              <NotificationBell />
-              <Link href={`/${session.user.role.toLowerCase()}/dashboard`}>
-                <Button variant="ghost" size="sm">
-                  {t('nav.dashboard')}
+                <Link
+                  href="/about"
+                  className={cn(
+                    'px-4 py-2 rounded-lg text-sm font-medium',
+                    isActive('/about') && 'text-primary bg-primary/10'
+                  )}
+                >
+                  {t('nav.about')}
+                </Link>
+
+                <div className="h-6 w-px bg-border mx-2" />
+              </>
+            )}
+
+            {session ? (
+              <>
+                <NotificationBell />
+                <Link href={`/${session.user.role.toLowerCase()}/dashboard`}>
+                  <Button variant="ghost" size="sm">
+                    {t('nav.dashboard')}
+                  </Button>
+                </Link>
+                <Button variant="ghost" size="sm" onClick={handleLogout}>
+                  {t('nav.logout')}
                 </Button>
-              </Link>
-              <Button variant="ghost" size="sm" onClick={handleLogout}>
-                {t('nav.logout')}
-              </Button>
-            </div>
-          ) : (
-            <div className="flex items-center gap-2">
-              <Link href="/auth/login">
-                <Button variant="ghost" size="sm">
-                  {t('nav.login')}
-                </Button>
-              </Link>
-              <Link href="/auth/register">
-                <Button size="sm">
-                  {t('nav.register')}
-                </Button>
-              </Link>
-            </div>
-          )}
+              </>
+            ) : (
+              <>
+                <Link href="/auth/login">
+                  <Button variant="ghost" size="sm">
+                    {t('nav.login')}
+                  </Button>
+                </Link>
+                <Link href="/auth/register">
+                  <Button size="sm">{t('nav.register')}</Button>
+                </Link>
+              </>
+            )}
 
-          <div className="mx-2 h-6 w-px bg-border dark:bg-border-dark" />
+            <div className="h-6 w-px bg-border mx-2" />
 
-          <div className="flex items-center gap-0.5">
             <LanguageToggle />
             <ThemeToggle />
           </div>
-        </div>
 
-        <div className="flex items-center gap-2 md:hidden">
-          <LanguageToggle />
-          <ThemeToggle />
-          {session && <NotificationBell />}
-          <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
-            {mobileMenuOpen ? <X /> : <Menu />}
-          </Button>
+          {/* ================= MOBILE TOP BAR ================= */}
+          <div className="flex md:hidden items-center gap-2">
+            <LanguageToggle />
+            <ThemeToggle />
+            {session && <NotificationBell />}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label="Toggle menu"
+            >
+              {mobileMenuOpen ? <X /> : <Menu />}
+            </Button>
+          </div>
         </div>
-      </div>
-    </nav>
+      </nav>
+
+      {/* ================= MOBILE MENU ================= */}
+      {mobileMenuOpen && (
+        <div className="md:hidden fixed inset-0 top-16 z-40 bg-background dark:bg-background-dark">
+          <div className="flex flex-col gap-2 p-4 text-text dark:text-text-dark">
+
+            {!session ? (
+              <>
+                <Link
+                  href="/"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="px-4 py-3 rounded-lg hover:bg-background-secondary dark:hover:bg-background-dark-secondary"
+                >
+                  {t('nav.home')}
+                </Link>
+
+                <Link
+                  href="/about"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="px-4 py-3 rounded-lg hover:bg-background-secondary dark:hover:bg-background-dark-secondary"
+                >
+                  {t('nav.about')}
+                </Link>
+
+                <div className="my-2 h-px bg-border" />
+
+                <Link href="/auth/login" onClick={() => setMobileMenuOpen(false)}>
+                  <Button variant="ghost" className="w-full justify-start">
+                    {t('nav.login')}
+                  </Button>
+                </Link>
+
+                <Link href="/auth/register" onClick={() => setMobileMenuOpen(false)}>
+                  <Button className="w-full justify-start">
+                    {t('nav.register')}
+                  </Button>
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link
+                  href={`/${session.user.role.toLowerCase()}/dashboard`}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <Button variant="ghost" className="w-full justify-start">
+                    {t('nav.dashboard')}
+                  </Button>
+                </Link>
+
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start"
+                  onClick={handleLogout}
+                >
+                  {t('nav.logout')}
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+    </>
   );
 }
+
 

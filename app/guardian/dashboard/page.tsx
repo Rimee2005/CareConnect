@@ -503,58 +503,102 @@ export default function GuardianDashboardPage() {
             </CardContent>
           </Card>
         </div>
+{/* Map Section - Service Area (UI refined, logic unchanged) */}
+{!geoLoading && browserPosition && (
+  <Card className="
+    mb-4 sm:mb-6 md:mb-8
+    rounded-2xl
+    border border-border
+    dark:border-emerald-500/40
+    shadow-sm
+    dark:bg-gradient-to-br
+    dark:from-background-dark-secondary
+    dark:to-background-dark-secondary/95
+    dark:shadow-[0_6px_24px_rgba(0,0,0,0.35)]
+    transition-all
+  ">
+    <CardContent className="p-5 sm:p-6">
 
-        {/* Map Section - Always visible for visual context */}
-        {!geoLoading && browserPosition && (
-          <Card className="mb-4 sm:mb-6 md:mb-8 rounded-2xl border border-border dark:border-border-dark/50 shadow-md dark:bg-gradient-to-br dark:from-background-dark-secondary dark:to-background-dark-secondary/95 dark:shadow-[0_4px_16px_rgba(0,0,0,0.25)] transition-all duration-300">
-            <CardContent className="p-6">
-              <div className="mb-5 space-y-2">
-                <h2 className="text-xl font-bold text-text dark:text-text-dark">
-                  Your Service Area
-                </h2>
-                <p className="text-sm text-text-muted dark:text-text-dark-muted">
-                  This is how vitals see your availability on the map
-                </p>
-              </div>
-              <div className="relative w-full rounded-xl overflow-hidden border border-border dark:border-border-dark/40 mb-4" style={{ height: '360px' }}>
-                <BaseMap
-                  center={browserPosition}
-                  zoom={13}
-                  markers={[
-                    {
-                      position: browserPosition,
-                      label: '📍',
-                      color: 'user',
-                    },
-                  ]}
-                  circle={
-                    profile?.serviceRadius
-                      ? {
-                          center: browserPosition,
-                          radius: profile.serviceRadius || 10,
-                          color: '#14b8a6',
-                          fillColor: '#14b8a6',
-                          fillOpacity: 0.15,
-                        }
-                      : undefined
-                  }
-                  height="360px"
-                />
-              </div>
-              {/* Service radius info */}
-              <div className="space-y-1">
-                <p className="text-sm text-text-muted dark:text-text-dark-muted transition-colors">
-                  Service Radius: {profile?.serviceRadius || 10} km from {profile?.location?.city || 'your location'}
-                </p>
-                {bookings.filter(b => b.status === 'ACCEPTED' || b.status === 'ONGOING').length > 0 && (
-                  <p className="text-xs text-text-muted dark:text-text-dark-muted italic">
-                    Active booking location shown (approximate)
-                  </p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+      {/* Header */}
+      <div className="mb-4 flex items-start justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-semibold text-text dark:text-white">
+            Service Area
+          </h2>
+          <p className="text-xs text-text-muted dark:text-emerald-200/70">
+            Visible to vitals
+          </p>
+        </div>
+
+        {/* Radius Badge */}
+        <Badge
+          className="
+            rounded-full px-3 py-1 text-xs font-semibold
+            border border-emerald-400/70
+            bg-emerald-50 text-emerald-700
+            dark:bg-emerald-500/15
+            dark:text-emerald-300
+            dark:border-emerald-400/60
+            shadow-sm
+          "
+        >
+          {profile?.serviceRadius || 10} km radius
+        </Badge>
+      </div>
+
+      {/* Map Container */}
+      <div
+        className="
+          relative w-full overflow-hidden rounded-xl
+          border-2 border-emerald-400/60
+          dark:border-emerald-500/50
+          shadow-sm
+          dark:shadow-[0_0_0_1px_rgba(16,185,129,0.25)]
+        "
+        style={{ height: '240px' }}   // 👈 compact height
+      >
+        <BaseMap
+          center={browserPosition}
+          zoom={13}
+          markers={[
+            {
+              position: browserPosition,
+              label: '📍',
+              color: 'user',
+            },
+          ]}
+          circle={
+            profile?.serviceRadius
+              ? {
+                  center: browserPosition,
+                  radius: profile.serviceRadius,
+                  color: '#10b981',      // emerald stroke
+                  fillColor: '#10b981',  // emerald fill
+                  fillOpacity: 0.15,
+                }
+              : undefined
+          }
+          height="240px"
+        />
+      </div>
+
+      {/* Footer Note */}
+      <div className="mt-3 space-y-1">
+        <p className="text-xs text-text-muted dark:text-text-dark-muted">
+          Service radius from {profile?.location?.city || 'your location'}
+        </p>
+        {bookings.filter(b => b.status === 'ACCEPTED' || b.status === 'ONGOING').length > 0 && (
+          <p className="text-[11px] italic text-text-muted dark:text-text-dark-muted">
+            Active booking location shown (approximate)
+          </p>
         )}
+      </div>
+
+    </CardContent>
+  </Card>
+)}
+
+
 
         {/* Booking Management */}
         <Card className="dark:bg-gradient-to-br dark:from-background-dark-secondary dark:to-background-dark-secondary/95 dark:border-border-dark/40 dark:shadow-[0_4px_16px_rgba(0,0,0,0.25)] dark:hover:shadow-[0_6px_24px_rgba(0,0,0,0.3)] dark:hover:border-primary-dark-mode/30 transition-all duration-300">

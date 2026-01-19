@@ -563,7 +563,6 @@ export default function GuardianDashboardPage() {
           markers={[
             {
               position: browserPosition,
-              label: '📍',
               color: 'user',
             },
           ]}
@@ -572,9 +571,6 @@ export default function GuardianDashboardPage() {
               ? {
                   center: browserPosition,
                   radius: profile.serviceRadius,
-                  color: '#10b981',      // emerald stroke
-                  fillColor: '#10b981',  // emerald fill
-                  fillOpacity: 0.15,
                 }
               : undefined
           }
